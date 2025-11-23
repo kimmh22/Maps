@@ -1,19 +1,23 @@
+// src/components/PlannerMap.jsx
 import { useEffect, useRef, useState } from 'react';
-// import DUMMY_PLACES from '../data/dummyPlaces';
 import {
   TOURAPI_SERVICE_KEY,
   CONTENT_TYPE_BY_CATEGORY,
 } from '../config/tourApiConfig';
 
 function PlannerMap() {
-  const mapRef = useRef(null); //객체를 저장하는 상자
-  const markersRef = useRef([]); //마커 배열 상자
-  const [regionKeyword, setRegionKeyword] = useState(''); //지역검색
-  const [category, setCategory] = useState('숙박'); //현재 선택된 카테고리
-  const [places, setPlaces] = useState([]); //카테고리 선택에 세부내용
-  const [selectedPlaces, setSelectedPlaces] = useState([]); //핑을 찍은 장소목록
-  const [center, setCenter] = useState(null);
+  // ---------- 상태 & ref ----------
+  const mapRef = useRef(null); // 카카오 지도 객체
+  // const markersRef = useRef([]); // 마커 배열
 
+  const [regionKeyword, setRegionKeyword] = useState(''); // 지역 검색어
+  const [category, setCategory] = useState('숙박'); // 현재 카테고리
+  const [places, setPlaces] = useState([]); // TourAPI에서 가져온 장소 목록
+  const [selectedPlaces, setSelectedPlaces] = useState([]); // 타임라인에 찍힌 장소
+  const [center, setCenter] = useState(null); // 지역 검색으로 잡힌 중심 좌표 {lat, lng}
+  const [draggingIndex, setDraggingIndex] = useState(null); // 드래그 중인 타임라인 인덱스
+
+  // ---------- 0) 지도 로딩 ----------
   useEffect(() => {
     const script = document.createElement('script');
     script.src =
@@ -28,7 +32,7 @@ function PlannerMap() {
         const container = document.getElementById('map');
         const options = {
           center: new window.kakao.maps.LatLng(37.5665, 126.978), // 서울 중심
-          level: 12,
+          level: 6,
         };
         const map = new window.kakao.maps.Map(container, options);
         mapRef.current = map;
@@ -47,7 +51,6 @@ function PlannerMap() {
         return;
       }
 
-      // TourAPI 4.0 KorService2 locationBasedList2
       const baseUrl =
         'https://apis.data.go.kr/B551011/KorService2/locationBasedList2';
 
@@ -104,6 +107,48 @@ function PlannerMap() {
     }
   };
 
+  // ---------- 거리 계산 (하버사인 공식) ----------
+  const calcDistanceKm = (lat1, lng1, lat2, lng2) => {
+    const R = 6371; // 지구 반지름(km)
+    const toRad = (deg) => (deg * Math.PI) / 180;
+
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) *
+        Math.cos(toRad(lat2)) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // km
+  };
+
+  // ---------- 선택된 장소 배열의 순서를 기준으로 거리/순서를 다시 계산 ----------
+  const recalcSegmentDistances = (placesArray) => {
+    return placesArray.map((p, idx) => {
+      let segmentDistance = null;
+
+      if (idx > 0) {
+        const prev = placesArray[idx - 1];
+        segmentDistance = calcDistanceKm(
+          prev.lat,
+          prev.lng,
+          p.lat,
+          p.lng
+        );
+      }
+
+      return {
+        ...p,
+        order: idx + 1, // 1부터 시작하는 순서
+        segmentDistance,
+      };
+    });
+  };
+
   // ---------- 1) 지역 검색: 입력값으로 지도 중심 이동 + TourAPI 호출 ----------
   const handleRegionSearch = () => {
     const { kakao } = window;
@@ -129,7 +174,7 @@ function PlannerMap() {
         // 중심 좌표 상태 저장
         setCenter({ lat, lng });
 
-        // 🔥 이 지역 기준으로 현재 카테고리의 장소들을 TourAPI에서 가져오기
+        // 이 지역 기준으로 현재 카테고리의 장소들을 TourAPI에서 가져오기
         loadPlacesFromTourAPI(lat, lng, category);
       } else {
         alert('해당 지역을 찾을 수 없습니다.');
@@ -150,25 +195,6 @@ function PlannerMap() {
     }
   };
 
-  // ---------- 거리 계산 (하버사인 공식) ----------
-  const calcDistanceKm = (lat1, lng1, lat2, lng2) => {
-    const R = 6371; // 지구 반지름(km)
-    const toRad = (deg) => (deg * Math.PI) / 180;
-
-    const dLat = toRad(lat2 - lat1);
-    const dLng = toRad(lng2 - lng1);
-
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(toRad(lat1)) *
-        Math.cos(toRad(lat2)) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // km
-  };
-
   // ---------- 3) 장소 선택 시: 지도에 핑 찍고, 타임라인 추가 ----------
   const handlePlaceSelect = (place) => {
     const { kakao } = window;
@@ -181,42 +207,74 @@ function PlannerMap() {
     mapRef.current.setLevel(5);
 
     // 마커 생성
-    const marker = new kakao.maps.Marker({
-      position: pos,
-    });
-    marker.setMap(mapRef.current);
-    markersRef.current.push(marker);
+    // 마커 생성
+const marker = new kakao.maps.Marker({
+  position: pos,
+});
+marker.setMap(mapRef.current);
 
-    // 이전 선택 지점과 거리 계산
-    let segmentDistance = null;
-    if (selectedPlaces.length > 0) {
-      const prev = selectedPlaces[selectedPlaces.length - 1];
-      segmentDistance = calcDistanceKm(
-        prev.lat,
-        prev.lng,
-        place.lat,
-        place.lng
-      );
-    }
+// 새 선택목록 (marker 포함해서 저장)
+const newSelectedRaw = [
+  ...selectedPlaces,
+  {
+    ...place,
+    marker,            // 🔥 이 장소의 마커 같이 저장
+    addedAt: new Date(),
+  },
+];
 
-    const newSelected = [
-      ...selectedPlaces,
-      {
-        ...place,
-        order: selectedPlaces.length + 1,
-        addedAt: new Date(),
-        segmentDistance, // 직전 포인트와의 거리 (km)
-      },
-    ];
+const newSelected = recalcSegmentDistances(newSelectedRaw);
+setSelectedPlaces(newSelected);
 
-    setSelectedPlaces(newSelected);
   };
 
-  // 타임라인에서 총 이동 거리 계산
+  // ---------- 타임라인 드래그 & 드롭 ----------
+  const handleDragStart = (index) => {
+    setDraggingIndex(index);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault(); // 드롭 허용
+  };
+
+  const handleDrop = (index) => {
+    if (draggingIndex === null || draggingIndex === index) return;
+
+    const reordered = [...selectedPlaces];
+    const [moved] = reordered.splice(draggingIndex, 1); // 끌어온 아이템 제거
+    reordered.splice(index, 0, moved); // 새 위치에 삽입
+
+    const recalced = recalcSegmentDistances(reordered);
+
+    setSelectedPlaces(recalced);
+    setDraggingIndex(null);
+  };
+  // ---------- 타임라인에서 장소 제거 ----------
+const handleRemovePlace = (index) => {
+  const target = selectedPlaces[index];
+
+  // 지도에서 마커 제거
+  if (target && target.marker) {
+    target.marker.setMap(null);
+  }
+
+  // 배열에서 제거
+  const remaining = selectedPlaces.filter((_, i) => i !== index);
+
+  // 남은 애들 순서/거리 재계산
+  const recalced = recalcSegmentDistances(remaining);
+
+  setSelectedPlaces(recalced);
+};
+
+
+
+  // ---------- 타임라인에서 총 이동 거리 계산 ----------
   const totalDistance = selectedPlaces.reduce((sum, p) => {
     return sum + (p.segmentDistance || 0);
   }, 0);
 
+  // ---------- JSX ----------
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: 'sans-serif' }}>
       {/* 왼쪽: 검색 + 카테고리 + 장소 리스트 */}
@@ -333,7 +391,8 @@ function PlannerMap() {
         <h3>4·5. 거리 & 타임라인</h3>
         <div style={{ fontSize: '13px', marginBottom: '8px' }}>
           선택한 핑 개수: <b>{selectedPlaces.length}</b>
-          <br />총 이동 거리:{' '}
+          <br />
+          총 이동 거리:{' '}
           <b>{totalDistance ? totalDistance.toFixed(2) : 0} km</b>
         </div>
 
@@ -353,27 +412,62 @@ function PlannerMap() {
             </p>
           )}
 
-          {selectedPlaces.map((p) => (
-            <div
-              key={p.order + p.id}
-              style={{
-                marginBottom: '8px',
-                paddingBottom: '8px',
-                borderBottom: '1px dashed #ddd',
-              }}
-            >
-              <div style={{ fontSize: '12px', color: '#999' }}>#{p.order}</div>
-              <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
-                {p.name}
-              </div>
-              <div style={{ fontSize: '12px', color: '#555' }}>{p.addr}</div>
-              {p.segmentDistance != null && (
-                <div style={{ fontSize: '12px', color: '#333' }}>
-                  이전 지점과 거리: <b>{p.segmentDistance.toFixed(2)} km</b>
-                </div>
-              )}
-            </div>
-          ))}
+          {selectedPlaces.map((p, idx) => (
+  <div
+    key={p.order + p.id}
+    draggable
+    onDragStart={() => handleDragStart(idx)}
+    onDragOver={handleDragOver}
+    onDrop={() => handleDrop(idx)}
+    style={{
+      marginBottom: '8px',
+      paddingBottom: '8px',
+      borderBottom: '1px dashed #ddd',
+      backgroundColor:
+        draggingIndex === idx ? '#f5f5f5' : 'transparent',
+      cursor: 'grab',
+      display: 'flex',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      gap: '8px',
+    }}
+  >
+    
+    {/* 왼쪽: 정보 */}
+    <div>
+      <div style={{ fontSize: '12px', color: '#999' }}>#{p.order}</div>
+      <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
+        {p.name}
+      </div>
+      <div style={{ fontSize: '12px', color: '#555' }}>{p.addr}</div>
+      {p.segmentDistance != null && (
+        <div style={{ fontSize: '12px', color: '#333' }}>
+          이전 지점과 거리:{' '}
+          <b>{p.segmentDistance.toFixed(2)} km</b>
+        </div>
+      )}
+    </div>
+
+    {/* 오른쪽: 삭제 버튼 */}
+    <button
+      onClick={(e) => {
+        e.stopPropagation();        // 드래그/드롭 이벤트랑 안 섞이게
+        handleRemovePlace(idx);     // 🔥 이 인덱스 삭제
+      }}
+      style={{
+        alignSelf: 'center',
+        padding: '2px 6px',
+        fontSize: '11px',
+        border: '1px solid #ccc',
+        backgroundColor: '#fff',
+        cursor: 'pointer',
+      }}
+    >
+      삭제
+    </button>
+  </div>
+))}
+
         </div>
       </div>
     </div>
