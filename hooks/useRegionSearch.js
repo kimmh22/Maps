@@ -3,41 +3,54 @@ import { useState } from 'react';
 import { CONTENT_TYPE_BY_CATEGORY } from '../config/tourApiConfig';
 import { fetchPlacesByLocation } from '../services/tourApiService';
 
+// "전체"에서 실제로 TourAPI를 호출할 카테고리들
+const BASE_CATEGORIES = ['숙박', '음식점', '축제'];
+
 export function useRegionSearch(mapRef) {
   const [regionKeyword, setRegionKeyword] = useState('');
-  const [category, setCategory] = useState('숙박');
+  const [category, setCategory] = useState('전체'); // ✅ 기본값: 전체
   const [places, setPlaces] = useState([]);
   const [center, setCenter] = useState(null);
 
-  const categories = ['숙박', '음식점', '축제'];
+  // ✅ UI에 보여줄 카테고리 목록
+  const categories = ['전체', ...BASE_CATEGORIES];
 
   // TourAPI에서 장소 가져오기
   const loadPlacesFromTourAPI = async (lat, lng, cat) => {
     try {
-      const contentTypeId = CONTENT_TYPE_BY_CATEGORY[cat];
-      if (!contentTypeId) {
-        console.error('알 수 없는 카테고리:', cat);
-        return;
+      // ✅ "전체"면 BASE_CATEGORIES 전부 조회
+      const catsToLoad = cat === '전체' ? BASE_CATEGORIES : [cat];
+
+      const allResults = [];
+
+      for (const c of catsToLoad) {
+        const contentTypeId = CONTENT_TYPE_BY_CATEGORY[c];
+        if (!contentTypeId) {
+          console.error('알 수 없는 카테고리:', c);
+          continue;
+        }
+
+        const items = await fetchPlacesByLocation({
+          lat,
+          lng,
+          contentTypeId,
+        });
+
+        const mapped = items
+          .filter((it) => it.mapx && it.mapy)
+          .map((it) => ({
+            id: it.contentid,
+            name: it.title,
+            category: c, // ✅ 각 결과에 실제 카테고리 태그
+            addr: it.addr1,
+            lat: Number(it.mapy),
+            lng: Number(it.mapx),
+          }));
+
+        allResults.push(...mapped);
       }
 
-      const items = await fetchPlacesByLocation({
-        lat,
-        lng,
-        contentTypeId,
-      });
-
-      const mapped = items
-        .filter((it) => it.mapx && it.mapy)
-        .map((it) => ({
-          id: it.contentid,
-          name: it.title,
-          category: cat,
-          addr: it.addr1,
-          lat: Number(it.mapy),
-          lng: Number(it.mapx),
-        }));
-
-      setPlaces(mapped);
+      setPlaces(allResults);
     } catch (err) {
       console.error('TourAPI 호출 실패:', err);
       alert(
@@ -58,7 +71,7 @@ export function useRegionSearch(mapRef) {
 
     const ps = new kakao.maps.services.Places();
 
-    // 1️⃣ 장소 검색 시도
+    // 1️⃣ 장소 검색 시도 (카카오 장소 검색)
     ps.keywordSearch(regionKeyword, (data, status) => {
       if (status === kakao.maps.services.Status.OK && data.length > 0) {
         const mapped = data.map((p) => ({
@@ -99,6 +112,7 @@ export function useRegionSearch(mapRef) {
 
           setCenter({ lat, lng });
 
+          // ✅ 여기서도 category가 "전체"면 TourAPI 3번 호출됨
           loadPlacesFromTourAPI(lat, lng, category);
         } else {
           alert('해당 장소/지역을 찾을 수 없습니다.');
@@ -112,8 +126,10 @@ export function useRegionSearch(mapRef) {
     setCategory(cat);
 
     if (center) {
+      // ✅ 중심 좌표가 잡혀있으면, TourAPI 카테고리 다시 조회
       loadPlacesFromTourAPI(center.lat, center.lng, cat);
     } else {
+      // 아직 중심이 없으면 일단 리스트 비우기
       setPlaces([]);
     }
   };
