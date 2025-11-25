@@ -94,7 +94,14 @@ function Timeline({
             >
               삭제
             </button> */}
-            <button onClick={() => handleRemovePlace(p.id)}>삭제</button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove(idx); // idx 넘김
+              }}
+            >
+              삭제
+            </button>
           </div>
         ))}
       </div>
