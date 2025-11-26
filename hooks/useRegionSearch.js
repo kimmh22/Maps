@@ -17,6 +17,7 @@ export function useRegionSearch(mapRef) {
   const categories = ['전체', ...BASE_CATEGORIES];
 
   // TourAPI에서 장소 가져오기
+  // TourAPI에서 장소 가져오기
   const loadPlacesFromTourAPI = async (
     lat,
     lng,
@@ -24,9 +25,7 @@ export function useRegionSearch(mapRef) {
     { saveAsBase = false } = {}
   ) => {
     try {
-      // ✅ "전체"면 BASE_CATEGORIES 전부 조회
       const catsToLoad = cat === '전체' ? BASE_CATEGORIES : [cat];
-
       const allResults = [];
 
       for (const c of catsToLoad) {
@@ -47,26 +46,24 @@ export function useRegionSearch(mapRef) {
           .map((it) => ({
             id: it.contentid,
             name: it.title,
-            category: c, // ✅ 각 결과에 실제 카테고리 태그
+            category: c,
             addr: it.addr1,
             lat: Number(it.mapy),
             lng: Number(it.mapx),
+            imageUrl: it.firstimage || it.firstimage2 || null, // 🔥 썸네일 URL
+            source: 'tour',
           }));
 
         allResults.push(...mapped);
       }
 
       setPlaces(allResults);
-
-      // ✅ "처음 전체 검색 결과"로 쓰고 싶을 때만 basePlaces에도 저장
       if (saveAsBase) {
         setBasePlaces(allResults);
       }
     } catch (err) {
       console.error('TourAPI 호출 실패:', err);
-      alert(
-        '공공데이터 API 호출 중 오류가 발생했습니다. (CORS나 키 설정 확인 필요)'
-      );
+      alert('공공데이터 API 호출 중 오류가 발생했습니다.');
     }
   };
 
@@ -92,7 +89,10 @@ export function useRegionSearch(mapRef) {
           addr: p.road_address_name || p.address_name,
           lat: Number(p.y),
           lng: Number(p.x),
+          imageUrl: null,
+          source: 'kakao',
         }));
+        console.log('🔥 Kakao Search Result:', mapped);
 
         // ✅ 처음 전체 검색 결과로 저장
         setPlaces(mapped);

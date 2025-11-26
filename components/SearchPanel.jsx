@@ -103,16 +103,37 @@ function SearchPanel({
                 padding: '8px 4px',
                 borderBottom: '1px solid #eee',
                 cursor: 'pointer',
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: '8px',
               }}
               onClick={() => onPlaceSelect(p)}
             >
-              <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
-                {p.name}
+              {/* 왼쪽 텍스트 영역 */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
+                  {p.name}
+                </div>
+                <div style={{ fontSize: '12px', color: '#555' }}>{p.addr}</div>
+                <div style={{ fontSize: '11px', color: '#888' }}>
+                  카테고리: {p.category}
+                </div>
               </div>
-              <div style={{ fontSize: '12px', color: '#555' }}>{p.addr}</div>
-              <div style={{ fontSize: '11px', color: '#888' }}>
-                카테고리: {p.category}
-              </div>
+
+              {/* 오른쪽 썸네일 (TourAPI에만 있음) */}
+              {p.imageUrl && (
+                <img
+                  src={p.imageUrl}
+                  alt={p.name}
+                  style={{
+                    width: '80px',
+                    height: '60px',
+                    objectFit: 'cover',
+                    borderRadius: '4px',
+                    flexShrink: 0,
+                  }}
+                />
+              )}
             </li>
           ))}
         </ul>
