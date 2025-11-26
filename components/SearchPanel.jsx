@@ -11,6 +11,19 @@ function SearchPanel({
   places,
   onPlaceSelect,
 }) {
+  const handleKeyDown = (e) => {
+    // 엔터로 검색
+    if (e.key === 'Enter') {
+      onRegionSearch();
+    }
+
+    // 스페이스바로 검색
+    if (e.key === ' ') {
+      // 입력창에 공백이 하나 더 생기는 게 싫으면 주석 해제
+      // e.preventDefault();
+      onRegionSearch();
+    }
+  };
   return (
     <div
       style={{
@@ -31,6 +44,7 @@ function SearchPanel({
             type="text"
             value={regionKeyword}
             onChange={(e) => onRegionKeywordChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="예: 서울 중구, 부산 해운대"
             style={{ flex: 1, padding: '6px' }}
           />

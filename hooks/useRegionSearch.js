@@ -10,13 +10,19 @@ export function useRegionSearch(mapRef) {
   const [regionKeyword, setRegionKeyword] = useState('');
   const [category, setCategory] = useState('전체'); // ✅ 기본값: 전체
   const [places, setPlaces] = useState([]);
+  const [basePlaces, setBasePlaces] = useState([]); // ✅ 처음 전체 결과를 기억
   const [center, setCenter] = useState(null);
 
   // ✅ UI에 보여줄 카테고리 목록
   const categories = ['전체', ...BASE_CATEGORIES];
 
   // TourAPI에서 장소 가져오기
-  const loadPlacesFromTourAPI = async (lat, lng, cat) => {
+  const loadPlacesFromTourAPI = async (
+    lat,
+    lng,
+    cat,
+    { saveAsBase = false } = {}
+  ) => {
     try {
       // ✅ "전체"면 BASE_CATEGORIES 전부 조회
       const catsToLoad = cat === '전체' ? BASE_CATEGORIES : [cat];
@@ -51,6 +57,11 @@ export function useRegionSearch(mapRef) {
       }
 
       setPlaces(allResults);
+
+      // ✅ "처음 전체 검색 결과"로 쓰고 싶을 때만 basePlaces에도 저장
+      if (saveAsBase) {
+        setBasePlaces(allResults);
+      }
     } catch (err) {
       console.error('TourAPI 호출 실패:', err);
       alert(
@@ -83,7 +94,10 @@ export function useRegionSearch(mapRef) {
           lng: Number(p.x),
         }));
 
+        // ✅ 처음 전체 검색 결과로 저장
         setPlaces(mapped);
+        setBasePlaces(mapped);
+        setCategory('전체');
 
         const bounds = new kakao.maps.LatLngBounds();
         mapped.forEach((p) => {
@@ -100,7 +114,7 @@ export function useRegionSearch(mapRef) {
       // 2️⃣ 장소 검색 실패 → 지역 검색 + TourAPI
       const geocoder = new kakao.maps.services.Geocoder();
 
-      geocoder.addressSearch(regionKeyword, (result, status2) => {
+      geocoder.addressSearch(regionKeyword, async (result, status2) => {
         if (status2 === kakao.maps.services.Status.OK && result.length > 0) {
           const first = result[0];
           const lat = Number(first.y);
@@ -111,9 +125,10 @@ export function useRegionSearch(mapRef) {
           mapRef.current.setLevel(6);
 
           setCenter({ lat, lng });
+          setCategory('전체');
 
-          // ✅ 여기서도 category가 "전체"면 TourAPI 3번 호출됨
-          loadPlacesFromTourAPI(lat, lng, category);
+          // ✅ 여기서는 "전체" 기준으로 TourAPI 조회 + basePlaces 저장
+          await loadPlacesFromTourAPI(lat, lng, '전체', { saveAsBase: true });
         } else {
           alert('해당 장소/지역을 찾을 수 없습니다.');
         }
@@ -125,8 +140,14 @@ export function useRegionSearch(mapRef) {
   const handleCategoryChange = (cat) => {
     setCategory(cat);
 
+    // ✅ 전체를 다시 누르면: 처음 검색 결과(basePlaces)를 그대로 보여줌
+    if (cat === '전체') {
+      setPlaces(basePlaces);
+      return;
+    }
+
+    // ✅ 다른 카테고리(숙박/음식점/축제)는 TourAPI로 새로 조회
     if (center) {
-      // ✅ 중심 좌표가 잡혀있으면, TourAPI 카테고리 다시 조회
       loadPlacesFromTourAPI(center.lat, center.lng, cat);
     } else {
       // 아직 중심이 없으면 일단 리스트 비우기
