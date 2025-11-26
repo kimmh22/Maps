@@ -4,7 +4,7 @@ import { CONTENT_TYPE_BY_CATEGORY } from '../config/tourApiConfig';
 import { fetchPlacesByLocation } from '../services/tourApiService';
 
 // "전체"에서 실제로 TourAPI를 호출할 카테고리들
-const BASE_CATEGORIES = ['숙박', '음식점', '축제'];
+const BASE_CATEGORIES = ['관광지', '문화시설', '숙박', '음식점', '축제'];
 
 export function useRegionSearch(mapRef) {
   const [regionKeyword, setRegionKeyword] = useState('');
