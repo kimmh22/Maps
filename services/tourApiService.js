@@ -33,6 +33,7 @@ export async function fetchPlacesByLocation({
   }
 
   const data = await res.json();
+  const sdata = await res.json();
   const body = data?.response?.body;
 
   const items = body?.items?.item || [];
