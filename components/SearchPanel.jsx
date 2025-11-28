@@ -1,5 +1,3 @@
-// src/components/SearchPanel.jsx
-
 function SearchPanel({
   regionKeyword,
   onRegionKeywordChange,
@@ -10,20 +8,23 @@ function SearchPanel({
   center,
   places,
   onPlaceSelect,
+  page,
+  totalPages,
+  onPageChange,
 }) {
   const handleKeyDown = (e) => {
-    // 엔터로 검색
     if (e.key === 'Enter') {
       onRegionSearch();
     }
-
-    // 스페이스바로 검색
     if (e.key === ' ') {
-      // 입력창에 공백이 하나 더 생기는 게 싫으면 주석 해제
-      // e.preventDefault();
       onRegionSearch();
     }
   };
+
+  const safePage = page && page > 0 ? page : 1;
+  const safeTotalPages = totalPages && totalPages > 0 ? totalPages : 1;
+  const pageNumbers = Array.from({ length: safeTotalPages }, (_, i) => i + 1);
+
   return (
     <div
       style={{
@@ -76,10 +77,14 @@ function SearchPanel({
             </button>
           ))}
         </div>
+        <div style={{ fontSize: '12px', color: '#666', margin: '4px 0 8px' }}>
+          페이지 <b>{safePage}</b> / {safeTotalPages} (이 페이지 {places.length}
+          개)
+        </div>
       </div>
 
       {/* 3. 장소 리스트 */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <h3>3. 장소 선택</h3>
 
         {!center && (
@@ -95,48 +100,84 @@ function SearchPanel({
           </p>
         )}
 
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-          {places.map((p) => (
-            <li
-              key={p.id}
-              style={{
-                padding: '8px 4px',
-                borderBottom: '1px solid #eee',
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                gap: '8px',
-              }}
-              onClick={() => onPlaceSelect(p)}
-            >
-              {/* 왼쪽 텍스트 영역 */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
-                  {p.name}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {places.map((p) => (
+              <li
+                key={p.id}
+                style={{
+                  padding: '8px 4px',
+                  borderBottom: '1px solid #eee',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: '8px',
+                }}
+                onClick={() => onPlaceSelect(p)}
+              >
+                {p.imageUrl && (
+                  <img
+                    src={p.imageUrl}
+                    alt={p.name}
+                    style={{
+                      width: '80px',
+                      height: '60px',
+                      objectFit: 'cover',
+                      borderRadius: '4px',
+                      flexShrink: 0,
+                    }}
+                  />
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
+                    {p.name}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#555' }}>
+                    {p.addr}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#888' }}>
+                    카테고리: {p.category}
+                  </div>
                 </div>
-                <div style={{ fontSize: '12px', color: '#555' }}>{p.addr}</div>
-                <div style={{ fontSize: '11px', color: '#888' }}>
-                  카테고리: {p.category}
-                </div>
-              </div>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-              {/* 오른쪽 썸네일 (TourAPI에만 있음) */}
-              {p.imageUrl && (
-                <img
-                  src={p.imageUrl}
-                  alt={p.name}
-                  style={{
-                    width: '80px',
-                    height: '60px',
-                    objectFit: 'cover',
-                    borderRadius: '4px',
-                    flexShrink: 0,
-                  }}
-                />
-              )}
-            </li>
-          ))}
-        </ul>
+        {/* 🔥 숫자 페이지 버튼 */}
+        {center && safeTotalPages > 1 && (
+          <div
+            style={{
+              marginTop: '8px',
+              paddingTop: '8px',
+              borderTop: '1px solid #eee',
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '4px',
+              fontSize: '12px',
+              flexWrap: 'wrap',
+            }}
+          >
+            {pageNumbers.map((num) => (
+              <button
+                key={num}
+                onClick={() => onPageChange(num)}
+                disabled={num === safePage}
+                style={{
+                  minWidth: '28px',
+                  padding: '4px 6px',
+                  borderRadius: '4px',
+                  border: '1px solid #ccc',
+                  backgroundColor: num === safePage ? '#333' : '#fff',
+                  color: num === safePage ? '#fff' : '#333',
+                  cursor: num === safePage ? 'default' : 'pointer',
+                }}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

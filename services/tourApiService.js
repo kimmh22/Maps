@@ -1,7 +1,14 @@
 // src/services/tourApiService.js
 import { TOURAPI_SERVICE_KEY } from '../config/tourApiConfig';
 
-export async function fetchPlacesByLocation({ lat, lng, contentTypeId }) {
+export const TOUR_PAGE_SIZE = 15;
+
+export async function fetchPlacesByLocation({
+  lat,
+  lng,
+  contentTypeId,
+  page = 1,
+}) {
   const baseUrl =
     'https://apis.data.go.kr/B551011/KorService2/locationBasedList2';
 
@@ -10,8 +17,8 @@ export async function fetchPlacesByLocation({ lat, lng, contentTypeId }) {
     MobileOS: 'ETC',
     MobileApp: 'trip-planner',
     _type: 'json',
-    numOfRows: '30',
-    pageNo: '1',
+    numOfRows: String(TOUR_PAGE_SIZE), // 🔥 한 페이지 15개
+    pageNo: String(page), // 🔥 현재 페이지
     mapX: String(lng),
     mapY: String(lat),
     radius: '5000',
@@ -26,11 +33,13 @@ export async function fetchPlacesByLocation({ lat, lng, contentTypeId }) {
   }
 
   const data = await res.json();
-  const items = data?.response?.body?.items?.item;
+  const body = data?.response?.body;
 
-  if (!items) return [];
-
+  const items = body?.items?.item || [];
   const list = Array.isArray(items) ? items : [items];
 
-  return list.filter((it) => it.mapx && it.mapy);
+  return {
+    items: list.filter((it) => it.mapx && it.mapy),
+    totalCount: body?.totalCount ?? 0,
+  };
 }

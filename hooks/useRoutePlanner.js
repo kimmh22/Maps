@@ -1,95 +1,94 @@
 // src/hooks/useRoutePlanner.js
-import { useRef, useState } from 'react';
-import { recalcSegmentDistances } from '../utils/distanceUtils';
-import { redrawMarkersAndPolyline } from '../utils/mapDrawingUtils';
+import { useState, useRef, useEffect } from 'react';
 
-const DEFAULT_MARKER_COLORS = [
-  '#ff5252',
-  '#40c4ff',
-  '#69f0ae',
-  '#ffd740',
-  '#b388ff',
-];
-
-export function useRoutePlanner(mapRef, options = {}) {
-  const markerColors = options.markerColors || DEFAULT_MARKER_COLORS;
-
+export function useRoutePlanner(mapRef) {
+  // 🔥 1. 훅들은 무조건 함수 맨 위, 조건문 밖에서
   const [selectedPlaces, setSelectedPlaces] = useState([]);
   const [draggingIndex, setDraggingIndex] = useState(null);
-
-  const markersRef = useRef([]);
+  const [totalDistance, setTotalDistance] = useState(0);
   const polylineRef = useRef(null);
 
-  // 🔥 선택된 장소 + 지도 싱크 허브
-  const syncSelectedPlacesWithMap = (basePlaces) => {
-    const withDistance = recalcSegmentDistances(basePlaces);
-    const withMarkers = redrawMarkersAndPolyline(
-      mapRef,
-      withDistance,
-      markersRef,
-      polylineRef,
-      markerColors
-    );
-
-    setSelectedPlaces(withMarkers);
-  };
-
-  // 장소 선택
-  const handlePlaceSelect = (place) => {
+  // 🔥 2. 지도/경로 그리기는 useEffect 안에서 조건 분기
+  useEffect(() => {
     const { kakao } = window;
     if (!kakao || !mapRef.current) return;
+    if (selectedPlaces.length < 2) {
+      // 경로가 없으면 폴리라인 지우기
+      if (polylineRef.current) {
+        polylineRef.current.setMap(null);
+        polylineRef.current = null;
+      }
+      setTotalDistance(0);
+      return;
+    }
 
-    const pos = new kakao.maps.LatLng(place.lat, place.lng);
-    mapRef.current.setCenter(pos);
-    mapRef.current.setLevel(5);
+    // 경로 좌표 만들기
+    const linePath = selectedPlaces.map(
+      (p) => new kakao.maps.LatLng(p.lat, p.lng)
+    );
 
-    const next = [...selectedPlaces, place];
-    syncSelectedPlacesWithMap(next);
+    // 이전 선 지우기
+    if (polylineRef.current) {
+      polylineRef.current.setMap(null);
+    }
+
+    // 새 선 그리기
+    const polyline = new kakao.maps.Polyline({
+      path: linePath,
+      strokeWeight: 4,
+      strokeColor: '#FF0000',
+      strokeOpacity: 0.8,
+      strokeStyle: 'solid',
+    });
+
+    polyline.setMap(mapRef.current);
+    polylineRef.current = polyline;
+
+    // 거리 계산
+    const distance = polyline.getLength(); // m 단위
+    setTotalDistance(distance / 1000); // km로 바꿔서 저장
+  }, [mapRef, selectedPlaces]);
+
+  // 🔥 3. 이벤트 핸들러들 (여기에는 if 써도 됨)
+  const handlePlaceSelect = (place) => {
+    setSelectedPlaces((prev) => [...prev, place]);
   };
 
-  // 드래그 & 드롭
+  const handleRemovePlace = (index) => {
+    setSelectedPlaces((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleDragStart = (index) => {
     setDraggingIndex(index);
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
+  const handleDragOver = (index) => {
+    // 기본 동작 방지 (드롭 가능하게)
+    // 이건 SearchPanel/Timeline 쪽에서 e.preventDefault() 해줄 수도 있음
   };
 
   const handleDrop = (index) => {
     if (draggingIndex === null || draggingIndex === index) return;
 
-    const reordered = [...selectedPlaces];
-    const [moved] = reordered.splice(draggingIndex, 1);
-    reordered.splice(index, 0, moved);
+    setSelectedPlaces((prev) => {
+      const newArr = [...prev];
+      const [moved] = newArr.splice(draggingIndex, 1);
+      newArr.splice(index, 0, moved);
+      return newArr;
+    });
 
-    syncSelectedPlacesWithMap(reordered);
     setDraggingIndex(null);
   };
 
-  // 삭제
-  const handleRemovePlace = (idx) => {
-    const remaining = selectedPlaces.filter((_, i) => i !== idx);
-    syncSelectedPlacesWithMap(remaining);
-  };
-
-  // 총 이동 거리
-  const totalDistance = selectedPlaces.reduce(
-    (sum, p) => sum + (p.segmentDistance || 0),
-    0
-  );
-
+  // 🔥 4. 훅 호출 끝난 다음에 반환
   return {
-    // 상태
     selectedPlaces,
-    draggingIndex,
     totalDistance,
-
-    // 핸들러
+    draggingIndex,
     handlePlaceSelect,
+    handleRemovePlace,
     handleDragStart,
     handleDragOver,
     handleDrop,
-    handleRemovePlace,
   };
 }

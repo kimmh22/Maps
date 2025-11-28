@@ -1,4 +1,3 @@
-// src/components/PlannerMap.jsx
 import { useKakaoMap } from '../hooks/useKakaoMap';
 import { useTripPlanner } from '../hooks/useTripPlanner';
 import SearchPanel from './SearchPanel';
@@ -21,6 +20,9 @@ function PlannerMap() {
         center={planner.center}
         places={planner.places}
         onPlaceSelect={planner.handlePlaceSelect}
+        page={planner.page}
+        totalPages={planner.totalPages}
+        onPageChange={planner.handlePageChange}
       />
 
       {/* 가운데: 지도 */}
