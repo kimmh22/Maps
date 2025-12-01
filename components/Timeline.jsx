@@ -80,20 +80,19 @@ function Timeline({
                     <div className="timeline-item-name">{p.name}</div>
                     <div className="timeline-item-addr">{p.addr}</div>
                   </div>
-                </div>
-
-                <div className="timeline-item-right">
-                  {/* ⚠️ 나중에 사용자가 등록한 썸네일 있으면 여기서 보여주면 됨 */}
-                  <button
-                    type="button"
-                    className="timeline-delete-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRemove(idx);
-                    }}
-                  >
-                    ✕
-                  </button>
+                  <div className="timeline-item-right">
+                    {/* ⚠️ 나중에 사용자가 등록한 썸네일 있으면 여기서 보여주면 됨 */}
+                    <button
+                      type="button"
+                      className="timeline-delete-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemove(idx);
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               </div>
 
