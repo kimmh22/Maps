@@ -51,7 +51,8 @@ export function useRoutePlanner(mapRef) {
 
   // 🔥 3. 이벤트 핸들러들 (여기에는 if 써도 됨)
   const handlePlaceSelect = (place) => {
-    setSelectedPlaces((prev) => [...prev, place]);
+    // 동일한 참조 push 방지 (중복 삭제 문제 해결)
+    setSelectedPlaces((prev) => [...prev, { ...place }]);
   };
 
   const handleRemovePlace = (index) => {

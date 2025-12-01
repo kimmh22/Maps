@@ -1,0 +1,151 @@
+/* 세로 100%, 가로 380px은 PlannerMap.css에서 잡아줌 */
+.place-detail-root {
+  height: 100%;
+  width: 100%;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #dde1e7;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* 이미지 영역 */
+.place-detail-image-wrap {
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  background-color: #e5e7eb;
+}
+
+.place-detail-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.place-detail-image-placeholder {
+  width: 100%;
+  height: 100%;
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 내용 스크롤 */
+.place-detail-content {
+  flex: 1;
+  padding: 14px 14px 16px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.place-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.place-detail-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  color: #111827;
+}
+
+.place-detail-badge {
+  padding: 4px 10px;
+  font-size: 11px;
+  border-radius: 999px;
+  background-color: #0ea5e9;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.place-detail-addr {
+  font-size: 13px;
+  color: #4b5563;
+  margin-bottom: 12px;
+}
+
+/* 메타 정보 */
+.place-detail-meta {
+  font-size: 12px;
+  color: #4b5563;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.place-detail-meta-row .label {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.place-detail-meta-row .value {
+  font-weight: 400;
+}
+
+/* 버튼 */
+.place-detail-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.btn-main {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 999px;
+  border: none;
+  background-color: #2563eb;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.btn-main:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-secondary {
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #374151;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: #f3f4f6;
+}
+
+/* 하단 “여행톡” 섹션 */
+.place-detail-footer {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 10px;
+}
+
+.place-detail-footer-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
+.place-detail-footer-empty {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0;
+}
+.value-multiline {
+  white-space: pre-line;
+}

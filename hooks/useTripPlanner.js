@@ -18,6 +18,7 @@ export function useTripPlanner(mapRef) {
     handleRegionSearch: region.handleRegionSearch,
     handleCategoryChange: region.handleCategoryChange,
     handlePageChange: region.handlePageChange,
+    totalCount: region.totalCount,
 
     // --- 경로/타임라인 관련 ---
     selectedPlaces: route.selectedPlaces,

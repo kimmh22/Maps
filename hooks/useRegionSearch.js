@@ -25,6 +25,9 @@ export function useRegionSearch(mapRef) {
   // 현재 화면이 Kakao 결과인지, Tour 결과인지
   const [mode, setMode] = useState(null); // 'kakao' | 'tour' | null
 
+  // 개수 저장용?
+  const [tourTotalCount, setTourTotalCount] = useState(0);
+
   const categories = CATEGORIES;
 
   // ---------- Kakao: 키워드 검색 한 페이지 ----------
@@ -72,6 +75,7 @@ export function useRegionSearch(mapRef) {
         setPlaces([]);
         setTotalPages(1);
         setMode('tour');
+        setTourTotalCount(totalCount);
         return;
       }
 
@@ -84,6 +88,7 @@ export function useRegionSearch(mapRef) {
 
       const mapped = items.map((it) => ({
         id: it.contentid,
+        contentTypeId,
         name: it.title,
         category: effectiveCat,
         addr: it.addr1,
@@ -95,6 +100,7 @@ export function useRegionSearch(mapRef) {
 
       setPlaces(mapped);
       setMode('tour');
+      setTourTotalCount(totalCount);
 
       const pages =
         totalCount === 0 ? 1 : Math.ceil(totalCount / TOUR_PAGE_SIZE);
@@ -283,6 +289,8 @@ export function useRegionSearch(mapRef) {
     center,
     page,
     totalPages,
+
+    totalCount: mode === 'kakao' ? kakaoTotalCount : tourTotalCount,
 
     setRegionKeyword,
     handleRegionSearch,
