@@ -11,6 +11,20 @@
   gap: 8px;
   box-sizing: border-box;
 }
+.timeline-item-left {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.timeline-item-maintext {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
 
 /* 🔹 430 x 62 : 사진 등록 줄 */
 .timeline-photo-row {
