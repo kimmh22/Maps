@@ -31,6 +31,20 @@ function PlaceDetailPanel({
   const eventStartDate = detail?.eventStartDate;
   const eventEndDate = detail?.eventEndDate;
 
+  const checkInTime = detail?.checkInTime;
+  const checkOutTime = detail?.checkOutTime;
+  const roomCount = detail?.roomCount;
+  const roomType = detail?.roomType;
+  const parkingLodging = detail?.parkingLodging;
+  const reservationLodging = detail?.reservationLodging;
+  const subFacility = detail?.subFacility;
+
+  const firstMenu = detail?.firstMenu;
+  const treatMenu = detail?.treatMenu;
+  const restDate = detail?.restDate;
+  const parkingFood = detail?.parkingFood;
+  const packing = detail?.packing;
+
   const replaceBrToNewline = (str) =>
     typeof str === 'string' ? str.replace(/<br\s*\/?>/gi, '\n') : str;
 
@@ -90,6 +104,72 @@ function PlaceDetailPanel({
               <div className="place-detail-meta-row">
                 <span className="label">이용시간 :</span>
                 <span className="value value-multiline">{cleanUseTime}</span>
+              </div>
+            )}
+            {/* 🔥 숙박 전용 정보 */}
+            {(checkInTime || checkOutTime) && (
+              <div className="place-detail-meta-row">
+                <span className="label">체크인/체크아웃 :</span>
+                <span className="value">
+                  {checkInTime && `체크인 ${checkInTime} `}
+                  {checkOutTime && ` / 체크아웃 ${checkOutTime}`}
+                </span>
+              </div>
+            )}
+
+            {(roomCount || roomType) && (
+              <div className="place-detail-meta-row">
+                <span className="label">객실 정보 :</span>
+                <span className="value">
+                  {roomCount && `객실 수 ${roomCount} `}{' '}
+                  {roomType && `(${roomType})`}
+                </span>
+              </div>
+            )}
+
+            {(parkingLodging || parkingFood) && (
+              <div className="place-detail-meta-row">
+                <span className="label">주차 :</span>
+                <span className="value">{parkingLodging || parkingFood}</span>
+              </div>
+            )}
+
+            {reservationLodging && (
+              <div className="place-detail-meta-row">
+                <span className="label">예약 :</span>
+                <span className="value">{reservationLodging}</span>
+              </div>
+            )}
+
+            {subFacility && (
+              <div className="place-detail-meta-row">
+                <span className="label">부대시설 :</span>
+                <span className="value value-multiline">{subFacility}</span>
+              </div>
+            )}
+
+            {/* 🔥 음식점 전용 정보 */}
+            {(firstMenu || treatMenu) && (
+              <div className="place-detail-meta-row">
+                <span className="label">대표메뉴 :</span>
+                <span className="value value-multiline">
+                  {firstMenu && `${firstMenu}\n`}
+                  {treatMenu && treatMenu}
+                </span>
+              </div>
+            )}
+
+            {restDate && (
+              <div className="place-detail-meta-row">
+                <span className="label">휴무일 :</span>
+                <span className="value value-multiline">{restDate}</span>
+              </div>
+            )}
+
+            {packing && (
+              <div className="place-detail-meta-row">
+                <span className="label">포장 :</span>
+                <span className="value">{packing}</span>
               </div>
             )}
 

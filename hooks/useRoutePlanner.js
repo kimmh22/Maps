@@ -1,5 +1,6 @@
 // src/hooks/useRoutePlanner.js
 import { useState, useRef, useEffect } from 'react';
+import { recalcSegmentDistances } from '../utils/distanceUtils';
 
 export function useRoutePlanner(mapRef) {
   // 🔥 1. 훅들은 무조건 함수 맨 위, 조건문 밖에서
@@ -12,6 +13,7 @@ export function useRoutePlanner(mapRef) {
   useEffect(() => {
     const { kakao } = window;
     if (!kakao || !mapRef.current) return;
+
     if (selectedPlaces.length < 2) {
       // 경로가 없으면 폴리라인 지우기
       if (polylineRef.current) {
@@ -49,25 +51,36 @@ export function useRoutePlanner(mapRef) {
     setTotalDistance(distance / 1000); // km로 바꿔서 저장
   }, [mapRef, selectedPlaces]);
 
-  // 🔥 3. 이벤트 핸들러들 (여기에는 if 써도 됨)
+  // 🔥 장소 추가 (타임라인 맨 뒤에)
   const handlePlaceSelect = (place) => {
-    // 동일한 참조 push 방지 (중복 삭제 문제 해결)
-    setSelectedPlaces((prev) => [...prev, { ...place }]);
+    setSelectedPlaces((prev) => {
+      const next = [...prev, { ...place }];
+      return recalcSegmentDistances(next);
+    });
   };
 
+  // 🔥 삭제
   const handleRemovePlace = (index) => {
-    setSelectedPlaces((prev) => prev.filter((_, i) => i !== index));
+    setSelectedPlaces((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      return recalcSegmentDistances(next);
+    });
   };
 
+  // 🔥 드래그 시작
   const handleDragStart = (index) => {
     setDraggingIndex(index);
   };
 
-  const handleDragOver = (index) => {
-    // 기본 동작 방지 (드롭 가능하게)
-    // 이건 SearchPanel/Timeline 쪽에서 e.preventDefault() 해줄 수도 있음
+  // 🔥 드래그 중 (drop 허용을 위해 e.preventDefault 필요)
+  const handleDragOver = (e, index) => {
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
+    // index는 지금은 안 쓰지만, 나중에 “위에 올리면 하이라이트” 같은 데 쓸 수 있음
   };
 
+  // 🔥 드롭 (순서 바꾸기)
   const handleDrop = (index) => {
     if (draggingIndex === null || draggingIndex === index) return;
 
@@ -75,7 +88,8 @@ export function useRoutePlanner(mapRef) {
       const newArr = [...prev];
       const [moved] = newArr.splice(draggingIndex, 1);
       newArr.splice(index, 0, moved);
-      return newArr;
+      // 순서 바뀌었으니 order / segmentDistance 다시 계산
+      return recalcSegmentDistances(newArr);
     });
 
     setDraggingIndex(null);

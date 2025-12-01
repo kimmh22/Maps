@@ -149,7 +149,6 @@
 .search-results-list-wrapper {
   flex: 1;
   overflow-y: auto;
-  min-height: 0;
 }
 
 .search-results-list {

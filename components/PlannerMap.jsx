@@ -14,19 +14,18 @@ function PlannerMap() {
 
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
 
-  // 🔥 상세 패널용 상태
   const [activePlace, setActivePlace] = useState(null);
   const [activeDetail, setActiveDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState(null);
 
+  // 🔥 타임라인에서 어느 카드가 펼쳐져 있는지
+  const [expandedPlaceId, setExpandedPlaceId] = useState(null);
+
   const toggleTimeline = () => setIsTimelineOpen((prev) => !prev);
 
-  // 왼쪽 검색 결과 클릭 시: 상세 패널만 열기
   const handleSearchResultClick = (place) => {
     setActivePlace(place);
-
-    // 지도 중심 이동 (선택)
     if (mapRef.current && window.kakao) {
       const { kakao } = window;
       const pos = new kakao.maps.LatLng(place.lat, place.lng);
@@ -34,7 +33,7 @@ function PlannerMap() {
     }
   };
 
-  // 🔥 activePlace가 바뀔 때 TourAPI 상세 호출
+  // 상세 호출 useEffect는 그대로
   useEffect(() => {
     if (!activePlace || activePlace.source !== 'tour') {
       setActiveDetail(null);
@@ -43,28 +42,19 @@ function PlannerMap() {
     }
 
     let cancelled = false;
-
     (async () => {
       try {
         setDetailLoading(true);
         setDetailError(null);
-
         const detail = await fetchTourPlaceDetail(
           activePlace.id,
           activePlace.contentTypeId
         );
-
-        if (!cancelled) {
-          setActiveDetail(detail);
-        }
+        if (!cancelled) setActiveDetail(detail);
       } catch (err) {
-        if (!cancelled) {
-          setDetailError(err.message || '상세 조회 실패');
-        }
+        if (!cancelled) setDetailError(err.message || '상세 조회 실패');
       } finally {
-        if (!cancelled) {
-          setDetailLoading(false);
-        }
+        if (!cancelled) setDetailLoading(false);
       }
     })();
 
@@ -84,9 +74,13 @@ function PlannerMap() {
     setDetailError(null);
   };
 
+  // 🔥 타임라인 카드 클릭 → 펼치기/접기
+  const handleTimelineToggle = (place) => {
+    setExpandedPlaceId((prev) => (prev === place.id ? null : place.id));
+  };
+
   return (
     <div className="planner-container">
-      {/* 왼쪽 검색 패널 */}
       <SearchPanel
         regionKeyword={planner.regionKeyword}
         onRegionKeywordChange={planner.setRegionKeyword}
@@ -96,7 +90,7 @@ function PlannerMap() {
         categories={planner.categories}
         center={planner.center}
         places={planner.places}
-        onPlaceClick={handleSearchResultClick} // 🔥 여기!
+        onPlaceClick={handleSearchResultClick}
         page={planner.page}
         totalPages={planner.totalPages}
         onPageChange={planner.handlePageChange}
@@ -104,7 +98,6 @@ function PlannerMap() {
         totalCount={planner.totalCount}
       />
 
-      {/* 가운데 380×1060 상세 패널 */}
       {activePlace && (
         <div className="detail-panel-wrapper">
           <PlaceDetailPanel
@@ -118,7 +111,6 @@ function PlannerMap() {
         </div>
       )}
 
-      {/* 오른쪽 지도 + 타임라인 */}
       <div className="map-area">
         <div id="map" className="map-canvas" />
 
@@ -146,6 +138,9 @@ function PlannerMap() {
             onDragOver={planner.handleDragOver}
             onDrop={planner.handleDrop}
             onRemove={planner.handleRemovePlace}
+            // 🔥 여기 두 줄 추가
+            expandedPlaceId={expandedPlaceId}
+            onItemToggle={handleTimelineToggle}
           />
         </div>
       </div>

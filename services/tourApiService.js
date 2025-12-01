@@ -122,6 +122,15 @@ export async function fetchTourPlaceDetail(contentId, contentTypeId) {
         ? introBody.items.item[0]
         : introBody.items.item)) ||
     {};
+  const useTime =
+    introItem.usetime ||
+    introItem.usetimeculture ||
+    introItem.usetimefestival ||
+    introItem.opentimefood || // 음식점 운영시간 필드까지 포함
+    null;
+
+  const isFood = String(contentTypeId) === '39';
+  const isLodging = String(contentTypeId) === '32';
 
   // 필요한 필드만 뽑아서 정리
   return {
@@ -142,7 +151,21 @@ export async function fetchTourPlaceDetail(contentId, contentTypeId) {
       null,
     eventStartDate: introItem.eventstartdate || null,
     eventEndDate: introItem.eventenddate || null,
+
+    // 숙박
     checkInTime: introItem.checkintime || null,
     checkOutTime: introItem.checkouttime || null,
+    roomCount: isLodging ? introItem.roomcount || null : null,
+    roomType: isLodging ? introItem.roomtype || null : null,
+    parkingLodging: isLodging ? introItem.parkinglodging || null : null,
+    reservationLodging: isLodging ? introItem.reservationlodging || null : null,
+    subFacility: isLodging ? introItem.subfacility || null : null,
+
+    // 음식점
+    firstMenu: isFood ? introItem.firstmenu || null : null,
+    treatMenu: isFood ? introItem.treatmenu || null : null,
+    restDate: isFood ? introItem.restdatefood || null : null,
+    parkingFood: isFood ? introItem.parkingfood || null : null,
+    packing: isFood ? introItem.packing || null : null,
   };
 }
