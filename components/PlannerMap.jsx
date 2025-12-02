@@ -1,5 +1,5 @@
 // src/components/PlannerMap.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useKakaoMap } from '../hooks/useKakaoMap';
 import { useTripPlanner } from '../hooks/useTripPlanner';
 import SearchPanel from './SearchPanel';
@@ -12,15 +12,23 @@ function PlannerMap() {
   const mapRef = useKakaoMap('map');
   const planner = useTripPlanner(mapRef);
 
+  //마커 찍기
+  const clickMarkerRef = useRef(null);
+
+  // 🔥 타임라인에서 어느 카드가 펼쳐져 있는지
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
+  const [expandedRouteId, setExpandedRouteId] = useState(null);
 
   const [activePlace, setActivePlace] = useState(null);
   const [activeDetail, setActiveDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState(null);
 
-  // 🔥 타임라인에서 어느 카드가 펼쳐져 있는지
-  const [expandedPlaceId, setExpandedPlaceId] = useState(null);
+  const handleTimelineToggle = (place) => {
+    setExpandedRouteId((prev) =>
+      prev === place.routeId ? null : place.routeId
+    );
+  };
 
   const toggleTimeline = () => setIsTimelineOpen((prev) => !prev);
 
@@ -32,6 +40,39 @@ function PlannerMap() {
       mapRef.current.setCenter(pos);
     }
   };
+  // 🔥 지도 클릭 시 그 위치에 마커 하나 찍기
+  useEffect(() => {
+    if (!mapRef.current || !window.kakao) return;
+    const { kakao } = window;
+    const map = mapRef.current;
+
+    const handleClick = (mouseEvent) => {
+      const latlng = mouseEvent.latLng;
+
+      // 이전 클릭 마커가 있으면 제거
+      if (clickMarkerRef.current) {
+        clickMarkerRef.current.setMap(null);
+      }
+
+      // 새 마커 생성
+      const marker = new kakao.maps.Marker({
+        position: latlng,
+      });
+
+      marker.setMap(map);
+      clickMarkerRef.current = marker;
+
+      // 디버깅용으로 콘솔에 좌표 찍어보기 (원하면 나중에 지워도 됨)
+      console.log('클릭 위치:', latlng.getLat(), latlng.getLng());
+    };
+
+    kakao.maps.event.addListener(map, 'click', handleClick);
+
+    // 컴포넌트 언마운트 시 이벤트 제거
+    return () => {
+      kakao.maps.event.removeListener(map, 'click', handleClick);
+    };
+  }, [mapRef]);
 
   // 상세 호출 useEffect는 그대로
   useEffect(() => {
@@ -72,11 +113,6 @@ function PlannerMap() {
     setActivePlace(null);
     setActiveDetail(null);
     setDetailError(null);
-  };
-
-  // 🔥 타임라인 카드 클릭 → 펼치기/접기
-  const handleTimelineToggle = (place) => {
-    setExpandedPlaceId((prev) => (prev === place.id ? null : place.id));
   };
 
   return (
@@ -138,8 +174,7 @@ function PlannerMap() {
             onDragOver={planner.handleDragOver}
             onDrop={planner.handleDrop}
             onRemove={planner.handleRemovePlace}
-            // 🔥 여기 두 줄 추가
-            expandedPlaceId={expandedPlaceId}
+            expandedRouteId={expandedRouteId}
             onItemToggle={handleTimelineToggle}
           />
         </div>

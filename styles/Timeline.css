@@ -11,12 +11,41 @@
   gap: 8px;
   box-sizing: border-box;
 }
+
+.timeline-header {
+  width: 430px;
+  height: 70px;
+}
+.timeline-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* 왼쪽과 오른쪽 끝에 배치 */
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px; /* 모서리 둥글게 */
+  padding: 8px 10px; /* 안쪽 여백 */
+  background-color: #ffffff;
+}
 .timeline-item-left {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 8px;
   min-width: 0;
+}
+.timeline-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* 왼쪽과 오른쪽 끝에 배치 */
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px; /* 모서리 둥글게 */
+  padding: 8px 10px; /* 안쪽 여백 */
+  background-color: #ffffff;
 }
 
 .timeline-item-maintext {
@@ -26,6 +55,41 @@
   min-width: 0;
 }
 
+.timeline-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+/* 위: 썸네일 + X 한 줄 */
+.timeline-right-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timeline-item-thumb {
+  width: 48px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+/* 아래: 작성됨 핀 */
+.timeline-right-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #2563eb;
+}
+
+.timeline-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background-color: #2563eb;
+}
 /* 🔹 430 x 62 : 사진 등록 줄 */
 .timeline-photo-row {
   width: 430px;

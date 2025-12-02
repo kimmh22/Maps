@@ -1,0 +1,21 @@
+.route-marker {
+  width: 28px;
+  height: 28px;
+
+  background-color: #2563eb;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: bold;
+
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+
+  /* CustomOverlay는 자동으로 클릭 막힘 방지 */
+  pointer-events: none;
+}

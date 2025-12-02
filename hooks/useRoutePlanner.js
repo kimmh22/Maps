@@ -1,109 +1,119 @@
-// src/hooks/useRoutePlanner.js
 import { useState, useRef, useEffect } from 'react';
 import { recalcSegmentDistances } from '../utils/distanceUtils';
 
+// 번호 동그라미 마커 생성
+function createNumberMarker(map, position, number) {
+  const content = `
+    <div class="route-marker">${number}</div>
+  `;
+
+  return new window.kakao.maps.CustomOverlay({
+    position,
+    content,
+    xAnchor: 0.5,
+    yAnchor: 0.5,
+  });
+}
+
 export function useRoutePlanner(mapRef) {
-  // 🔥 1. 훅들은 무조건 함수 맨 위, 조건문 밖에서
   const [selectedPlaces, setSelectedPlaces] = useState([]);
   const [draggingIndex, setDraggingIndex] = useState(null);
   const [totalDistance, setTotalDistance] = useState(0);
-  const polylineRef = useRef(null);
 
-  // 🔥 2. 지도/경로 그리기는 useEffect 안에서 조건 분기
+  const polylineRef = useRef(null);
+  const markersRef = useRef([]);
+
   useEffect(() => {
     const { kakao } = window;
     if (!kakao || !mapRef.current) return;
+    const map = mapRef.current;
 
-    if (selectedPlaces.length < 2) {
-      // 경로가 없으면 폴리라인 지우기
-      if (polylineRef.current) {
-        polylineRef.current.setMap(null);
-        polylineRef.current = null;
-      }
+    // 기존 마커 제거
+    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current = [];
+
+    // 기존 폴리라인 제거
+    if (polylineRef.current) {
+      polylineRef.current.setMap(null);
+      polylineRef.current = null;
+    }
+
+    if (selectedPlaces.length === 0) {
       setTotalDistance(0);
       return;
     }
 
-    // 경로 좌표 만들기
-    const linePath = selectedPlaces.map(
-      (p) => new kakao.maps.LatLng(p.lat, p.lng)
-    );
+    const path = [];
+    const newMarkers = [];
 
-    // 이전 선 지우기
-    if (polylineRef.current) {
-      polylineRef.current.setMap(null);
+    selectedPlaces.forEach((p, idx) => {
+      const pos = new kakao.maps.LatLng(p.lat, p.lng);
+      path.push(pos);
+
+      // 🔵 번호 동그라미 마커 생성
+      const marker = createNumberMarker(map, pos, idx + 1);
+      marker.setMap(map);
+      newMarkers.push(marker);
+    });
+
+    markersRef.current = newMarkers;
+
+    // 폴리라인 그리기
+    if (path.length >= 2) {
+      const polyline = new kakao.maps.Polyline({
+        path,
+        strokeWeight: 4,
+        strokeColor: '#0a0a0a',
+        strokeOpacity: 0.8,
+        strokeStyle: 'solid',
+      });
+      polyline.setMap(map);
+      polylineRef.current = polyline;
+
+      setTotalDistance(polyline.getLength() / 1000); // km
+    } else {
+      setTotalDistance(0);
     }
+  }, [selectedPlaces, mapRef]);
 
-    // 새 선 그리기
-    const polyline = new kakao.maps.Polyline({
-      path: linePath,
-      strokeWeight: 4,
-      strokeColor: '#FF0000',
-      strokeOpacity: 0.8,
-      strokeStyle: 'solid',
-    });
-
-    polyline.setMap(mapRef.current);
-    polylineRef.current = polyline;
-
-    // 거리 계산
-    const distance = polyline.getLength(); // m 단위
-    setTotalDistance(distance / 1000); // km로 바꿔서 저장
-  }, [mapRef, selectedPlaces]);
-
-  // 🔥 장소 추가 (타임라인 맨 뒤에)
-  const handlePlaceSelect = (place) => {
-    setSelectedPlaces((prev) => {
-      const next = [...prev, { ...place }];
-      return recalcSegmentDistances(next);
-    });
-  };
-
-  // 🔥 삭제
-  const handleRemovePlace = (index) => {
-    setSelectedPlaces((prev) => {
-      const next = prev.filter((_, i) => i !== index);
-      return recalcSegmentDistances(next);
-    });
-  };
-
-  // 🔥 드래그 시작
-  const handleDragStart = (index) => {
-    setDraggingIndex(index);
-  };
-
-  // 🔥 드래그 중 (drop 허용을 위해 e.preventDefault 필요)
-  const handleDragOver = (e, index) => {
-    if (e && e.preventDefault) {
-      e.preventDefault();
-    }
-    // index는 지금은 안 쓰지만, 나중에 “위에 올리면 하이라이트” 같은 데 쓸 수 있음
-  };
-
-  // 🔥 드롭 (순서 바꾸기)
-  const handleDrop = (index) => {
-    if (draggingIndex === null || draggingIndex === index) return;
-
-    setSelectedPlaces((prev) => {
-      const newArr = [...prev];
-      const [moved] = newArr.splice(draggingIndex, 1);
-      newArr.splice(index, 0, moved);
-      // 순서 바뀌었으니 order / segmentDistance 다시 계산
-      return recalcSegmentDistances(newArr);
-    });
-
-    setDraggingIndex(null);
-  };
-
-  // 🔥 4. 훅 호출 끝난 다음에 반환
   return {
     selectedPlaces,
     totalDistance,
     draggingIndex,
-    handlePlaceSelect,
-    handleRemovePlace,
-    handleDragStart,
-    handleDragOver,
-    handleDrop,
+
+    // 🔥 장소 추가할 때 routeId 생성해서 넣기
+    handlePlaceSelect: (place) => {
+      setSelectedPlaces((prev) => {
+        const routeId = `${place.id}-${Date.now()}-${Math.random()
+          .toString(16)
+          .slice(2)}`;
+
+        const next = [...prev, { ...place, routeId }];
+        return recalcSegmentDistances(next);
+      });
+    },
+
+    handleRemovePlace: (index) => {
+      setSelectedPlaces((prev) =>
+        recalcSegmentDistances(prev.filter((_, i) => i !== index))
+      );
+    },
+
+    handleDragStart: (i) => setDraggingIndex(i),
+
+    handleDragOver: (e) => e.preventDefault(),
+
+    handleDrop: (i) => {
+      if (draggingIndex === null || draggingIndex === i) return;
+
+      setSelectedPlaces((prev) => {
+        const arr = [...prev];
+        const [moved] = arr.splice(draggingIndex, 1);
+        arr.splice(i, 0, moved);
+        return recalcSegmentDistances(arr);
+      });
+
+      setDraggingIndex(null);
+    },
   };
 }
