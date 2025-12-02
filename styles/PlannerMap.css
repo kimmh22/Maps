@@ -1,23 +1,31 @@
-/* src/components/PlannerMap.css */
+/* =========================================
+ * 1. 전체 레이아웃 (왼쪽 패널 + 지도 + 타임라인)
+ * =======================================*/
 
-/* 전체 레이아웃: 왼쪽 패널 + 오른쪽 지도 */
 .planner-container {
   display: flex;
+  width: 100vw; /* 브라우저 너비 전체 */
+  height: 100vh; /* 브라우저 높이 전체 */
   box-sizing: border-box;
-  width: 100vw; /* 브라우저 오른쪽 여백 없이 꽉 차게 */
-  height: 100vh; /* 창 높이 꽉 채우기 */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   overflow: hidden;
 }
-/* 가운데 상세 패널 영역 */
+
+/* =========================================
+ * 2. 왼쪽 장소 상세 패널 (PlaceDetailPanel)
+ * =======================================*/
+
 .detail-panel-wrapper {
-  width: 380px; /* 🔥 요구 사이즈 */
+  width: 380px; /* 요구된 사이즈 */
   height: 100%;
-  box-sizing: border-box;
   background-color: #ffffff;
+  box-sizing: border-box;
 }
 
-/* 오른쪽 지도 영역 */
+/* =========================================
+ * 3. 오른쪽 지도 영역
+ * =======================================*/
+
 .map-area {
   position: relative;
   flex: 1;
@@ -30,18 +38,24 @@
   height: 100%;
 }
 
-/* 타임라인 토글 버튼 */
+/* =========================================
+ * 4. 타임라인 열기/닫기 버튼 (지도 우상단)
+ * =======================================*/
+
 .timeline-toggle-btn {
   position: absolute;
   top: 12px;
-  right: 12px; /* 항상 화면 오른쪽 위 */
+  right: 12px; /* 항상 지도 오른쪽 위 */
   z-index: 30;
+
   padding: 6px 10px;
   font-size: 12px;
+
   border-radius: 4px;
   border: 1px solid #ccc;
   background-color: #ffffff;
   cursor: pointer;
+
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
@@ -49,32 +63,38 @@
   background-color: #f7f7f7;
 }
 
-/* 타임라인 사이드바: 지도 위에 겹치는 패널 */
+/* =========================================
+ * 5. 타임라인 사이드 패널 (지도 위에 오버레이)
+ * =======================================*/
+
 .timeline-sidebar {
   position: absolute;
   top: 0;
   right: 0;
   width: 430px;
   height: 100%;
+
   background-color: #ffffff;
   border-left: 1px solid #ddd;
-  box-sizing: border-box;
+
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+
   z-index: 20;
 
-  /* 애니메이션 기본값 */
+  /* 기본 애니메이션 설정 */
   transform: translateX(0);
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* 열린 상태: 그대로 보임 */
+/* 열림 상태 */
 .timeline-sidebar--open {
   transform: translateX(0);
   box-shadow: -4px 0 8px rgba(0, 0, 0, 0.15);
 }
 
-/* 닫힌 상태: 오른쪽으로 밀어서 화면 밖으로 */
+/* 닫힘 상태: 오른쪽 화면 밖으로 이동 */
 .timeline-sidebar--closed {
   transform: translateX(100%);
   box-shadow: none;

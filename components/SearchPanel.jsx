@@ -14,9 +14,13 @@ function SearchPanel({
   page,
   totalPages,
   onPageChange,
-  selectedPlaces = [], // 🔥 새로 추가
+  selectedPlaces = [],
   totalCount,
 }) {
+  // ============================
+  // 1. 유틸 & 계산값
+  // ============================
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       onRegionSearch();
@@ -33,18 +37,27 @@ function SearchPanel({
       (sp) => sp.id === p.id && (sp.source || '') === (p.source || '')
     );
 
+  // ============================
+  // 2. 렌더링
+  // ============================
+
   return (
     <div className="search-panel-root">
-      {/* 상단 헤더 */}
+      {/* =======================
+          헤더 영역
+       ======================= */}
       <header className="search-header">
+        {/* 상단 타이틀 줄 */}
         <div className="search-header-top">
           <button type="button" className="header-back-btn">
             ←
           </button>
+
           <div className="header-title-wrap">
             <div className="header-subtitle">Travly 글 작성</div>
             <div className="header-title">Travly 검색</div>
           </div>
+
           <div className="header-logo">✈️</div>
         </div>
 
@@ -86,8 +99,11 @@ function SearchPanel({
         </div>
       </header>
 
-      {/* 검색 결과 영역 */}
+      {/* =======================
+          검색 결과 영역
+       ======================= */}
       <section className="search-results-section">
+        {/* 결과 헤더 */}
         <div className="search-results-header">
           {center ? (
             <>
@@ -101,7 +117,7 @@ function SearchPanel({
           )}
         </div>
 
-        {/* 카드 리스트 */}
+        {/* 결과 리스트 */}
         <div className="search-results-list-wrapper">
           <ul className="search-results-list">
             {places.map((p) => {
@@ -133,14 +149,13 @@ function SearchPanel({
                   {/* 텍스트 영역 */}
                   <div className="result-main">
                     <div className="result-category-badge">
-                      {/* 카테고리 텍스트 (숙박 / 음식점 / 축제 등) */}
                       {p.category || category || '장소'}
                     </div>
                     <div className="result-name">{p.name}</div>
                     <div className="result-addr">{p.addr}</div>
                   </div>
 
-                  {/* 오른쪽 아이콘 (선택 표시) */}
+                  {/* 오른쪽 상태 아이콘 */}
                   <div className="result-right">
                     {selected ? (
                       <div className="result-selected-icon">✓</div>

@@ -1,13 +1,14 @@
 // src/services/tourApiService.js
 import { TOURAPI_SERVICE_KEY } from '../config/tourApiConfig';
 
-// 한 페이지에 가져올 개수
-export const TOUR_PAGE_SIZE = 15;
+// =============================================
+// 1. 기본 상수
+// =============================================
+export const TOUR_PAGE_SIZE = 15; // 한 페이지 조회 개수
 
-/**
- * 주변(위도/경도) 기준 장소 목록 조회
- * - locationBasedList2
- */
+// =============================================
+// 2. 주변 기반 장소 목록 조회 (locationBasedList2)
+// =============================================
 export async function fetchPlacesByLocation({
   lat,
   lng,
@@ -17,6 +18,7 @@ export async function fetchPlacesByLocation({
   const baseUrl =
     'https://apis.data.go.kr/B551011/KorService2/locationBasedList2';
 
+  // 공통 QueryString
   const params = new URLSearchParams({
     serviceKey: TOURAPI_SERVICE_KEY,
     MobileOS: 'ETC',
@@ -29,19 +31,19 @@ export async function fetchPlacesByLocation({
     radius: '5000',
   });
 
-  // 숙박/축제/관광지 등 카테고리 지정
+  // 카테고리(contentTypeId) 지정
   if (contentTypeId) {
     params.set('contentTypeId', String(contentTypeId));
   }
 
   const url = `${baseUrl}?${params.toString()}`;
-
   const res = await fetch(url);
+
   if (!res.ok) {
     throw new Error('TourAPI 응답 에러: ' + res.status);
   }
 
-  // ❗ body stream 은 한 번만 읽기
+  // body stream은 한 번만 읽을 수 있음
   const data = await res.json();
   const body = data?.response?.body;
 
@@ -49,18 +51,19 @@ export async function fetchPlacesByLocation({
   const list = Array.isArray(items) ? items : [items];
 
   return {
-    // 위경도 없는 이상치 제거
+    // mapx/mapy 없는 잘못된 데이터 제외
     items: list.filter((it) => it.mapx && it.mapy),
     totalCount: body?.totalCount ?? 0,
   };
 }
 
-/**
- * contentId + contentTypeId로 상세 조회
- * - detailCommon2 : 공통 정보(제목, 주소, 이미지, 개요 등)
- * - detailIntro2  : 타입별 상세(이용시간, 행사기간 등)
- */
+// =============================================
+// 3. 상세 조회(detailCommon2 + detailIntro2)
+// =============================================
 export async function fetchTourPlaceDetail(contentId, contentTypeId) {
+  const baseUrl = 'https://apis.data.go.kr/B551011/KorService2';
+
+  // 공통 파라미터
   const baseParams = {
     serviceKey: TOURAPI_SERVICE_KEY,
     MobileOS: 'ETC',
@@ -69,7 +72,7 @@ export async function fetchTourPlaceDetail(contentId, contentTypeId) {
     contentId: String(contentId),
   };
 
-  // 공통 정보
+  // 공통 정보(detailCommon2)
   const commonParams = new URLSearchParams({
     ...baseParams,
     defaultYN: 'Y',
@@ -81,17 +84,16 @@ export async function fetchTourPlaceDetail(contentId, contentTypeId) {
     overviewYN: 'Y',
   });
 
-  // 타입별 소개 정보
+  // 타입별 정보(detailIntro2)
   const introParams = new URLSearchParams({
     ...baseParams,
     contentTypeId: String(contentTypeId),
   });
 
-  const baseUrl = 'https://apis.data.go.kr/B551011/KorService2';
-
   const commonUrl = `${baseUrl}/detailCommon2?${commonParams.toString()}`;
   const introUrl = `${baseUrl}/detailIntro2?${introParams.toString()}`;
 
+  // 두 API 병렬 호출
   const [commonRes, introRes] = await Promise.all([
     fetch(commonUrl),
     fetch(introUrl),
@@ -110,30 +112,32 @@ export async function fetchTourPlaceDetail(contentId, contentTypeId) {
   const commonBody = commonJson?.response?.body;
   const introBody = introJson?.response?.body;
 
-  const commonItem =
-    (commonBody?.items?.item &&
-      (Array.isArray(commonBody.items.item)
-        ? commonBody.items.item[0]
-        : commonBody.items.item)) ||
-    {};
-  const introItem =
-    (introBody?.items?.item &&
-      (Array.isArray(introBody.items.item)
-        ? introBody.items.item[0]
-        : introBody.items.item)) ||
-    {};
+  // 단일/배열 둘 다 처리
+  const commonItem = Array.isArray(commonBody?.items?.item)
+    ? commonBody.items.item[0]
+    : commonBody?.items?.item || {};
+
+  const introItem = Array.isArray(introBody?.items?.item)
+    ? introBody.items.item[0]
+    : introBody?.items?.item || {};
+
+  // 타입 구분
+  const isFood = String(contentTypeId) === '39';
+  const isLodging = String(contentTypeId) === '32';
+
+  // 음식점, 숙박 등에서 운영시간 필드 이름이 제각각이라 통일
   const useTime =
     introItem.usetime ||
     introItem.usetimeculture ||
     introItem.usetimefestival ||
-    introItem.opentimefood || // 음식점 운영시간 필드까지 포함
+    introItem.opentimefood ||
     null;
 
-  const isFood = String(contentTypeId) === '39';
-  const isLodging = String(contentTypeId) === '32';
-
-  // 필요한 필드만 뽑아서 정리
+  // =============================================
+  // 4. 필요한 필드만 추려서 반환
+  // =============================================
   return {
+    // 공통 정보
     title: commonItem.title,
     addr1: commonItem.addr1,
     addr2: commonItem.addr2,
@@ -143,25 +147,21 @@ export async function fetchTourPlaceDetail(contentId, contentTypeId) {
     firstimage: commonItem.firstimage,
     firstimage2: commonItem.firstimage2,
 
-    // 타입별 정보(숙박/행사/관광지 등)
-    useTime:
-      introItem.usetime ||
-      introItem.usetimeculture ||
-      introItem.usetimefestival ||
-      null,
+    // 소개 정보
+    useTime,
     eventStartDate: introItem.eventstartdate || null,
     eventEndDate: introItem.eventenddate || null,
 
-    // 숙박
-    checkInTime: introItem.checkintime || null,
-    checkOutTime: introItem.checkouttime || null,
+    // 숙박 정보
+    checkInTime: isLodging ? introItem.checkintime || null : null,
+    checkOutTime: isLodging ? introItem.checkouttime || null : null,
     roomCount: isLodging ? introItem.roomcount || null : null,
     roomType: isLodging ? introItem.roomtype || null : null,
     parkingLodging: isLodging ? introItem.parkinglodging || null : null,
     reservationLodging: isLodging ? introItem.reservationlodging || null : null,
     subFacility: isLodging ? introItem.subfacility || null : null,
 
-    // 음식점
+    // 음식점 정보
     firstMenu: isFood ? introItem.firstmenu || null : null,
     treatMenu: isFood ? introItem.treatmenu || null : null,
     restDate: isFood ? introItem.restdatefood || null : null,

@@ -6,29 +6,44 @@ import {
   TOUR_PAGE_SIZE,
 } from '../services/tourApiService';
 
+// ============================================
+// 1. 상수 정의
+// ============================================
 const CATEGORIES = ['전체', '관광지', '문화시설', '숙박', '음식점', '축제'];
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 15; // Kakao Places 한 페이지 크기
 
 export function useRegionSearch(mapRef) {
+  // ============================================
+  // 2. 상태 정의
+  // ============================================
+
+  // 검색어 / 카테고리
   const [regionKeyword, setRegionKeyword] = useState('');
   const [category, setCategory] = useState('전체');
+
+  // 현재 화면에 보여줄 장소 목록 + 지도 중심
   const [places, setPlaces] = useState([]);
   const [center, setCenter] = useState(null);
 
+  // 페이지네이션 상태
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Kakao 모드일 때 “전체”에서 사용할 데이터
+  // Kakao 모드 데이터
   const [kakaoPlaces, setKakaoPlaces] = useState([]);
   const [kakaoTotalCount, setKakaoTotalCount] = useState(0);
 
-  // 현재 화면이 Kakao 결과인지, Tour 결과인지
-  const [mode, setMode] = useState(null); // 'kakao' | 'tour' | null
-
-  // 개수 저장용?
+  // TourAPI 모드 데이터
   const [tourTotalCount, setTourTotalCount] = useState(0);
 
+  // 현재 결과 모드: 'kakao' | 'tour' | null
+  const [mode, setMode] = useState(null);
+
   const categories = CATEGORIES;
+
+  // ============================================
+  // 3. 내부 유틸 함수들
+  // ============================================
 
   // ---------- Kakao: 키워드 검색 한 페이지 ----------
   const searchKakaoPage = (keyword, pageNo = 1) => {
@@ -75,7 +90,7 @@ export function useRegionSearch(mapRef) {
         setPlaces([]);
         setTotalPages(1);
         setMode('tour');
-        setTourTotalCount(totalCount);
+        setTourTotalCount(0); // 🔥 totalCount가 없어서 0으로 명시
         return;
       }
 
@@ -111,7 +126,11 @@ export function useRegionSearch(mapRef) {
     }
   };
 
-  // ---------- 🔥 지역 검색 ----------
+  // ============================================
+  // 4. 외부에서 쓰는 핸들러들
+  // ============================================
+
+  // ---------- 지역 검색 (검색 버튼 / 엔터) ----------
   const handleRegionSearch = async () => {
     const { kakao } = window;
     if (!kakao || !mapRef.current) return;
@@ -148,7 +167,7 @@ export function useRegionSearch(mapRef) {
         const pages = totalCount === 0 ? 1 : Math.ceil(totalCount / PAGE_SIZE);
         setTotalPages(pages);
 
-        // 지도 중심
+        // 지도 영역 맞추기
         const bounds = new kakao.maps.LatLngBounds();
         mapped.forEach((p) => {
           bounds.extend(new kakao.maps.LatLng(p.lat, p.lng));
@@ -158,7 +177,7 @@ export function useRegionSearch(mapRef) {
         const first = mapped[0];
         setCenter({ lat: first.lat, lng: first.lng });
 
-        return;
+        return; // Kakao 결과 있으면 여기서 끝
       }
     } catch (e) {
       console.error('카카오 검색 중 오류:', e);
@@ -186,13 +205,14 @@ export function useRegionSearch(mapRef) {
     });
   };
 
-  // ---------- 카테고리 변경 ----------
+  // ---------- 카테고리 변경 (전체 / 관광지 / 숙박 / 음식점 / 축제 등) ----------
   const handleCategoryChange = async (cat) => {
     setCategory(cat);
     setPage(1);
 
-    // 전체 → Kakao 결과 있으면 Kakao 모드 유지
+    // "전체" 카테고리
     if (cat === '전체') {
+      // Kakao 결과가 있으면 Kakao 모드 그대로 사용
       if (kakaoPlaces.length > 0) {
         setPlaces(kakaoPlaces);
         setMode('kakao');
@@ -214,7 +234,7 @@ export function useRegionSearch(mapRef) {
       return;
     }
 
-    // 관강지/문화시설/숙박/음식점/축제 → 무조건 TourAPI 사용
+    // "관광지 / 문화시설 / 숙박 / 음식점 / 축제" → 무조건 TourAPI 사용
     if (center) {
       await loadTourPage({
         lat: center.lat,
@@ -223,13 +243,15 @@ export function useRegionSearch(mapRef) {
         pageNo: 1,
       });
     } else {
+      // center가 없으면 보여줄 게 없음
       setPlaces([]);
       setMode('tour');
       setTotalPages(1);
+      setTourTotalCount(0);
     }
   };
 
-  // ---------- 페이지 변경 (1,2,3,4,5) ----------
+  // ---------- 페이지 변경 (1, 2, 3, ...) ----------
   const handlePageChange = async (nextPage) => {
     if (nextPage < 1 || nextPage > totalPages) return;
 
@@ -237,6 +259,7 @@ export function useRegionSearch(mapRef) {
 
     // 카테고리 = 전체
     if (category === '전체') {
+      // Kakao 모드
       if (mode === 'kakao') {
         const { items, totalCount } = await searchKakaoPage(
           regionKeyword,
@@ -257,9 +280,12 @@ export function useRegionSearch(mapRef) {
         setPlaces(mapped);
         setKakaoPlaces(mapped);
         setKakaoTotalCount(totalCount);
+
         const pages = totalCount === 0 ? 1 : Math.ceil(totalCount / PAGE_SIZE);
         setTotalPages(pages);
-      } else if (mode === 'tour' && center) {
+      }
+      // Tour 모드
+      else if (mode === 'tour' && center) {
         await loadTourPage({
           lat: center.lat,
           lng: center.lng,
@@ -267,10 +293,11 @@ export function useRegionSearch(mapRef) {
           pageNo: nextPage,
         });
       }
+
       return;
     }
 
-    // 카테고리 = 관광지/숙박/음식점/... → 항상 TourAPI
+    // 카테고리 = 관광지 / 문화시설 / 숙박 / 음식점 / 축제 → 항상 TourAPI
     if (center) {
       await loadTourPage({
         lat: center.lat,
@@ -281,6 +308,10 @@ export function useRegionSearch(mapRef) {
     }
   };
 
+  // ============================================
+  // 5. 반환값 (커스텀 훅 외부에서 사용할 것들)
+  // ============================================
+
   return {
     regionKeyword,
     category,
@@ -290,6 +321,7 @@ export function useRegionSearch(mapRef) {
     page,
     totalPages,
 
+    // Kakao / Tour 모드에 따라 totalCount 선택
     totalCount: mode === 'kakao' ? kakaoTotalCount : tourTotalCount,
 
     setRegionKeyword,

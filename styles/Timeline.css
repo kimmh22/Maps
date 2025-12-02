@@ -1,51 +1,151 @@
-/* 에디터 전체 래퍼 */
-.timeline-editor {
-  margin-top: 4px;
-  padding: 8px 0 10px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  background-color: #f9fafb;
+/* src/styles/Timeline.css */
+
+/* =========================================
+ * 0. 타임라인 전체 레이아웃
+ * =======================================*/
+
+.timeline-root {
+  position: relative; /* footer 고정 기준 */
+  height: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center; /* 내부를 가운데 정렬 */
-  gap: 8px;
   box-sizing: border-box;
 }
 
+/* 리스트 영역: footer에 가리지 않게 아래 여백 */
+.timeline-list-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 72px; /* 하단 버튼 높이만큼 여유 */
+  box-sizing: border-box;
+}
+
+/* 비어 있을 때 안내 문구 */
+.timeline-empty {
+  font-size: 13px;
+  color: #6b7280;
+  text-align: center;
+  margin-top: 16px;
+}
+
+/* 개별 카드 래퍼 */
+.timeline-card {
+  margin-top: 8px;
+}
+
+/* =========================================
+ * 1. 타임라인 헤더 / 요약 영역
+ * =======================================*/
+
+/* 상단 제목 + 여행 제목 입력 */
 .timeline-header {
   width: 430px;
   height: 70px;
 }
+
+.timeline-header-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: #111827;
+}
+
+.timeline-trip-title-row {
+  margin-top: 6px;
+}
+
+.timeline-trip-title-input {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  box-sizing: border-box;
+}
+
+/* 경로 요약 박스 래퍼 */
+.timeline-summary-box {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.timeline-summary-header {
+  margin-bottom: 4px;
+}
+
+.timeline-summary-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* 경로 요약 본체 */
 .timeline-summary {
   display: flex;
   align-items: center;
-  justify-content: space-between; /* 왼쪽과 오른쪽 끝에 배치 */
-  padding: 10px 12px;
-  border-bottom: 1px solid #eee;
-  background: #fff;
+  justify-content: space-between;
+  padding: 8px 10px;
   border: 1px solid #d1d5db;
-  border-radius: 6px; /* 모서리 둥글게 */
-  padding: 8px 10px; /* 안쪽 여백 */
+  border-radius: 6px;
   background-color: #ffffff;
 }
-.timeline-item-left {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
+
+.timeline-summary-left {
+  font-size: 13px;
+  color: #111827;
 }
+
+.timeline-summary-button {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+.timeline-summary-button:hover {
+  background-color: #f3f4f6;
+}
+
+/* =========================================
+ * 2. 리스트 아이템 (한 카드 줄)
+ * =======================================*/
+
 .timeline-item {
   display: flex;
   align-items: center;
-  justify-content: space-between; /* 왼쪽과 오른쪽 끝에 배치 */
-  padding: 10px 12px;
-  border-bottom: 1px solid #eee;
-  background: #fff;
+  justify-content: space-between;
+  padding: 8px 10px;
   border: 1px solid #d1d5db;
-  border-radius: 6px; /* 모서리 둥글게 */
-  padding: 8px 10px; /* 안쪽 여백 */
+  border-radius: 6px;
   background-color: #ffffff;
+  border-bottom: 1px solid #eee;
+}
+
+.timeline-item--dragging {
+  opacity: 0.6;
+}
+
+/* 왼쪽 영역: 드래그핸들 + 번호 + 텍스트 */
+.timeline-item-left {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 8px;
+  min-width: 0;
+}
+
+.timeline-drag-handle {
+  cursor: grab;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.timeline-item-order {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
 }
 
 .timeline-item-maintext {
@@ -55,13 +155,32 @@
   min-width: 0;
 }
 
+.timeline-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.timeline-item-addr {
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* 오른쪽 영역: 썸네일 + 삭제 + 상태 */
 .timeline-item-right {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 4px;
 }
-/* 위: 썸네일 + X 한 줄 */
+
+/* 상단: 썸네일 + X 버튼 */
 .timeline-right-top {
   display: flex;
   align-items: center;
@@ -75,7 +194,20 @@
   object-fit: cover;
 }
 
-/* 아래: 작성됨 핀 */
+.timeline-delete-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 하단: "작성됨" 표시 */
 .timeline-right-status {
   display: flex;
   align-items: center;
@@ -90,38 +222,41 @@
   border-radius: 999px;
   background-color: #2563eb;
 }
-/* 🔹 430 x 62 : 사진 등록 줄 */
-.timeline-photo-row {
-  width: 430px;
-  height: 62px;
-  box-sizing: border-box;
-  padding: 8px 12px;
+
+/* =========================================
+ * 3. 에디터 전체 (사진 + 장소제목 + 글)
+ * =======================================*/
+
+.timeline-editor {
+  margin-top: 4px;
+  padding: 8px 0 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 8px;
+  box-sizing: border-box;
 }
 
-.timeline-photo-label-btn {
-  padding: 6px 10px;
-  font-size: 12px;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
-  background-color: #ffffff;
-  cursor: pointer;
-  flex-shrink: 0;
+/* 장소 소제목 입력 */
+.timeline-place-title-row {
+  width: 390px;
+  margin: 8px 0 4px;
+  box-sizing: border-box;
 }
 
-.timeline-photo-input {
-  flex: 1;
-  height: 100%; /* 62px 안쪽에서 꽉 차게 */
+.timeline-place-title-input {
+  width: 100%;
   padding: 6px 10px;
-  font-size: 12px;
+  font-size: 13px;
   border-radius: 6px;
   border: 1px solid #d1d5db;
   box-sizing: border-box;
 }
 
-/* 🔹 390 x 200 : 글 작성 박스 */
+/* 글 작성 */
 .timeline-textarea-wrap {
   width: 390px;
   height: 200px;
@@ -131,7 +266,6 @@
 .timeline-textarea {
   width: 100%;
   height: 100%;
-  box-sizing: border-box;
   padding: 8px 10px;
   font-size: 13px;
   border-radius: 6px;
@@ -139,9 +273,10 @@
   resize: none;
   line-height: 1.5;
   color: #111827;
+  box-sizing: border-box;
 }
 
-/* 버튼 영역은 그대로 */
+/* 에디터 버튼 (필요 시) */
 .timeline-editor-buttons {
   width: 390px;
   display: flex;
@@ -159,7 +294,140 @@
 }
 
 .timeline-editor-btn--primary {
-  border-color: #2563eb;
   background-color: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+/* =========================================
+ * 4. 사진 업로드 줄
+ * =======================================*/
+
+.timeline-photo-row {
+  width: 430px;
+  height: 62px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.timeline-photo-label-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.timeline-photo-input {
+  flex: 1;
+  height: 100%;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  box-sizing: border-box;
+}
+
+/* =========================================
+ * 5. 사진 슬라이더 (큰 사진 + 좌우 버튼)
+ * =======================================*/
+
+.timeline-photo-preview-slider {
+  width: 430px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+/* 좌우 화살표 */
+.timeline-photo-nav-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.timeline-photo-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* 메인 사진 영역 */
+.timeline-photo-preview-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.timeline-photo-preview-img {
+  width: 100%;
+  max-height: 220px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  object-fit: cover;
+}
+
+.timeline-photo-preview-indicator {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* 현재 사진 삭제 버튼 */
+.timeline-photo-delete-btn {
+  margin-top: 2px;
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 999px;
+  border: 1px solid #ef4444;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  cursor: pointer;
+}
+
+/* =========================================
+ * 6. 하단 푸터 버튼 (우측 하단 고정)
+ * =======================================*/
+
+.timeline-footer {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+
+  display: flex;
+  gap: 8px;
+
+  background-color: #ffffff;
+  padding: 6px 8px;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.timeline-footer-btn {
+  padding: 8px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+.timeline-footer-btn--primary {
+  background-color: #2563eb;
+  border-color: #2563eb;
   color: #ffffff;
 }
