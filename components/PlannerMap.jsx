@@ -7,8 +7,14 @@ import Timeline from './Timeline';
 import PlaceDetailPanel from './PlaceDetailPanel';
 import { fetchTourPlaceDetail } from '../services/tourApiService';
 import '../styles/PlannerMap.css';
+import TravelCategoryModal from './TravelCategoryModal';
+import EditPage from './EditPage';
 
-function PlannerMap() {
+function PlannerMap({ mode = 'write, initialData' }) {
+  //0. 모달
+  const [showIntroModal, setShowIntroModal] = useState(true);
+  const [tripMeta, setTripMeta] = useState(null);
+
   // ============================================
   // 1. 지도 / 플래너 훅
   // ============================================
@@ -164,8 +170,41 @@ function PlannerMap() {
   // 6. 렌더링
   // ============================================
 
+  // useEffect(() => {
+  //   if (mode === 'edit' && initialData) {
+  //     setTripTitle(initialData.tripTitle);
+
+  //     const restored = initialData.items.map((item, idx) => ({
+  //       id: item.placeId,
+  //       routeId: `${item.placeId}-${Date.now()}-${Math.random().toString(16)}`,
+  //       order: item.order,
+  //       name: item.name,
+  //       addr: item.addr,
+  //       lat: item.lat,
+  //       lng: item.lng,
+  //       photos: item.photos,
+  //       title: item.title,
+  //       text: item.text,
+  //       source: 'db',
+  //     }));
+
+  //     planner.setSelectedPlaces(restored);
+  //   }
+  // }, [mode, initialData]);
+
   return (
     <div className="planner-container">
+      {/* 🔥 여행 카테고리 모달 (처음에만 보이고, 다음으로 누르면 사라짐) */}
+      {showIntroModal && (
+        <TravelCategoryModal
+          onNext={(meta) => {
+            setTripMeta(meta); // meta = { withWho, duration, styles }
+            setShowIntroModal(false);
+            // meta는 나중에 글 저장할 때 payload에 같이 보내면 됨
+          }}
+        />
+      )}
+
       {/* ----- 왼쪽 검색 패널 ----- */}
       <SearchPanel
         regionKeyword={planner.regionKeyword}

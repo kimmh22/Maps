@@ -1,0 +1,168 @@
+/* 🔥 화면 전체를 덮는 모달 컨테이너 */
+.tcm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  /* 배경을 반투명이 아니라 그냥 흰 화면으로 */
+  background-color: #ffffff;
+  /* 전체를 쓰는 레이아웃 */
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.tcm-global-header {
+  width: 100%;
+  height: 30px;
+  padding: 0 24px;
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.tcm-global-back-btn {
+  border: none;
+  background: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.tcm-global-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* 🔥 카드 = 이제 화면 전체 레이아웃 */
+.tcm-card {
+  box-sizing: border-box;
+  background-color: #ffffff;
+  border-radius: 0; /* 모서리 없애기 */
+  box-shadow: none; /* 그림자 제거 */
+  padding: 12px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 헤더 */
+.tcm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.tcm-back-btn {
+  border: none;
+  background: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.tcm-header-center {
+  height: 189px;
+  width: 142px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.tcm-logo {
+  font-size: 28px;
+}
+
+.tcm-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.tcm-header-right {
+  font-size: 14px;
+  color: #4b5563;
+}
+
+/* 본문 */
+.tcm-body {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  /* 🔥 나머지 화면을 채우고, 그 안에서만 스크롤 */
+  flex: 1;
+  overflow-y: auto;
+}
+
+.tcm-section {
+  width: 1080px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tcm-section-title {
+  height: 28px;
+  font-size: 14px;
+  font-weight: 600;
+  padding-bottom: 10px;
+}
+
+.tcm-section-sub {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* 선택 버튼들 */
+.tcm-chip-grid {
+  height: auto;
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tcm-chip {
+  width: 255px;
+  height: 60px;
+  padding: 16px 14px;
+  border-radius: 30px;
+  border: none;
+  background-color: #e5e7eb;
+  color: #111827;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.tcm-chip--active {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+/* 하단 버튼 */
+.tcm-footer {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.tcm-next-btn {
+  width: 1100px;
+  height: 60px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: none;
+  background-color: #2563eb;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tcm-next-btn:hover {
+  background-color: #1d4ed8;
+}

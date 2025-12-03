@@ -98,6 +98,11 @@ export function useRoutePlanner(mapRef) {
 
   // 🔥 장소 선택 → routeId 생성 후 추가
   const handlePlaceSelect = (place) => {
+    if (selectedPlaces.length >= 10) {
+      alert('여행지는 최대 10개까지만 선택할 수 있어요.');
+      return;
+    }
+
     setSelectedPlaces((prev) => {
       const routeId = `${place.id}-${Date.now()}-${Math.random()
         .toString(16)
@@ -155,6 +160,7 @@ export function useRoutePlanner(mapRef) {
     draggingIndex,
     handleClearAll,
 
+    setSelectedPlaces,
     handlePlaceSelect,
     handleRemovePlace,
     handleDragStart,

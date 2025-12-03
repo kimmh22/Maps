@@ -26,6 +26,13 @@ function Timeline({
   const [savedMap, setSavedMap] = useState({}); // { [routeId]: true }
   const [photoIndexMap, setPhotoIndexMap] = useState({}); // { [routeId]: number }
 
+  // // edit 모드일 때 초기 데이터 세팅
+  // useEffect(() => {
+  //   if (mode === 'edit' && initialDrafts) {
+  //     setDrafts(initialDrafts);
+  //   }
+  // }, [mode, initialDrafts]);
+
   // ============================================
   // 2. 핸들러: draft / 사진 / 제출 / 취소
   // ============================================
@@ -459,7 +466,7 @@ function Timeline({
           className="timeline-footer-btn timeline-footer-btn--primary"
           onClick={handleSubmitAll}
         >
-          글 작성하기
+          {/* {mode === 'edit' ? '글 수정하기' : '글 작성하기'} */}
         </button>
       </div>
     </div>
