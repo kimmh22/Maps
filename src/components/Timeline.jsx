@@ -1,6 +1,7 @@
 // src/components/Timeline.jsx
 import { useState } from 'react';
 import '../styles/Timeline.css';
+import apiClient from '../services/apiClient';
 
 function Timeline({
   selectedPlaces,
@@ -13,6 +14,7 @@ function Timeline({
   expandedRouteId,
   onItemToggle,
   onClearAll,
+  tripMeta,
 }) {
   // ============================================
   // 1. 상태 정의
@@ -44,6 +46,7 @@ function Timeline({
         photos: [],
         title: '',
         text: '',
+        fileIds: [],
       };
 
       return {
@@ -57,36 +60,64 @@ function Timeline({
   };
 
   // 사진 파일 업로드 (최대 5장)
-  const handleFilesChange = (routeId, fileList) => {
+  // 사진 파일 업로드 (최대 5장)
+  const handleFilesChange = async (routeId, fileList) => {
     if (!fileList || fileList.length === 0) return;
 
-    const files = Array.from(fileList);
+    const files = Array.from(fileList).slice(0, 5); // 최대 5장만 사용
 
-    setDrafts((prev) => {
-      const prevDraft = prev[routeId] || {
-        photos: [],
-        title: '',
-        text: '',
-      };
-      const prevPhotos = prevDraft.photos || [];
-
-      const newUrls = files.map((file) => URL.createObjectURL(file));
-      const merged = [...prevPhotos, ...newUrls].slice(0, 5); // 최대 5장
-
-      return {
-        ...prev,
-        [routeId]: {
-          ...prevDraft,
-          photos: merged,
-        },
-      };
+    // 1) 서버로 파일 업로드 (multipart/form-data)
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append('files', file); // FileUploadDto 안의 List<MultipartFile> files 에 매핑된다고 가정
     });
 
-    // 새 사진 넣으면 인덱스를 0으로 초기화
-    setPhotoIndexMap((prev) => ({
-      ...prev,
-      [routeId]: 0,
-    }));
+    try {
+      const res = await apiClient.post('/fileupload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      // 서버가 List<File> 반환 -> [{ id, filename, orgFilename }, ...]
+      const uploadedFiles = res.data || [];
+      const newFileIds = uploadedFiles.map((f) => f.id);
+
+      // 2) 프론트 미리보기 URL 생성
+      const newUrls = files.map((file) => URL.createObjectURL(file));
+
+      setDrafts((prev) => {
+        const prevDraft = prev[routeId] || {
+          photos: [],
+          title: '',
+          text: '',
+          fileIds: [],
+        };
+
+        const prevPhotos = prevDraft.photos || [];
+        const prevFileIds = prevDraft.fileIds || [];
+
+        // 기존 + 새 사진 합쳐서 최대 5개까지만 유지
+        const mergedPhotos = [...prevPhotos, ...newUrls].slice(0, 5);
+        const mergedFileIds = [...prevFileIds, ...newFileIds].slice(0, 5);
+
+        return {
+          ...prev,
+          [routeId]: {
+            ...prevDraft,
+            photos: mergedPhotos,
+            fileIds: mergedFileIds,
+          },
+        };
+      });
+
+      // 새 사진 넣으면 인덱스를 0으로 초기화
+      setPhotoIndexMap((prev) => ({
+        ...prev,
+        [routeId]: 0,
+      }));
+    } catch (error) {
+      console.error('사진 업로드 실패:', error);
+      alert('사진 업로드 중 오류가 발생했습니다.');
+    }
   };
 
   // 현재 보고 있는 사진 삭제
@@ -96,23 +127,26 @@ function Timeline({
         photos: [],
         title: '',
         text: '',
+        fileIds: [],
       };
       const photos = prevDraft.photos || [];
+      const fileIds = prevDraft.fileIds || [];
       const curIndex = photoIndexMap[routeId] ?? 0;
 
       if (photos.length === 0) return prev;
 
       const nextPhotos = photos.filter((_, i) => i !== curIndex);
+      const nextFileIds = fileIds.filter((_, i) => i !== curIndex);
 
       const nextDrafts = {
         ...prev,
         [routeId]: {
           ...prevDraft,
           photos: nextPhotos,
+          fileIds: nextFileIds,
         },
       };
 
-      // 인덱스 조정
       const newLen = nextPhotos.length;
       setPhotoIndexMap((prevMap) => {
         if (newLen === 0) {
@@ -127,48 +161,48 @@ function Timeline({
     });
   };
 
-  // 전체 글 작성하기 (저장 버튼)
-  const handleSubmitAll = () => {
-    const items = selectedPlaces.map((p, idx) => {
+  const handleSubmitAll = async () => {
+    if (!tripTitle.trim()) {
+      alert('여행 제목을 입력해 주세요.');
+      return;
+    }
+
+    const places = selectedPlaces.map((p, idx) => {
       const routeId = p.routeId || `${p.id}-${idx}`;
-      const draft = drafts[routeId] || {
-        photos: [],
-        title: '',
-        text: '',
-      };
+      const draft = drafts[routeId] || {};
 
       return {
-        placeId: p.id,
-        order: p.order,
-        title: draft.title || '',
-        photos: draft.photos || [],
-        text: draft.text || '',
+        title: draft.title ?? '', // null 방지
+        content: draft.text ?? '', // null 방지
+
+        mapPlaceId: String(p.id ?? ''), // 문자열 보장
+        externalId: String(p.id ?? ''), // 문자열 보장
+
+        x: Number(p.lng ?? 0), // double
+        y: Number(p.lat ?? 0), // double
+
+        files: fileIds.map((id) => ({ fileId: id })),
       };
     });
 
     const payload = {
-      tripTitle,
-      items,
+      title: tripTitle ?? '',
+      memberId: 1, // ⭐ 반드시 DB 내 실제 memberId여야 한다
+      filterItemIds: [], // null 방지
+      places,
     };
 
-    setSavedMap((prev) => {
-      const next = { ...prev };
-      items.forEach((item, idx) => {
-        const routeId =
-          selectedPlaces[idx].routeId || `${selectedPlaces[idx].id}-${idx}`;
-        if (
-          (item.photos && item.photos.length > 0) ||
-          item.text ||
-          item.title
-        ) {
-          next[routeId] = true;
-        }
-      });
-      return next;
-    });
+    console.log('📌 서버 전송 payload:', payload);
 
-    console.log('저장 payload', payload);
-    alert('글 작성하기: 나중에 서버 저장 로직으로 바꾸면 돼요!');
+    try {
+      const res = await apiClient.post('/board', payload);
+      alert('저장 성공!');
+      console.log('🟢 서버 응답:', res.data);
+    } catch (err) {
+      console.error('🔴 저장 실패:', err);
+      console.log('서버 응답:', err.response?.data);
+      alert('저장 실패: ' + JSON.stringify(err.response?.data));
+    }
   };
 
   // 전체 취소
@@ -466,6 +500,7 @@ function Timeline({
           className="timeline-footer-btn timeline-footer-btn--primary"
           onClick={handleSubmitAll}
         >
+          글 작성하기
           {/* {mode === 'edit' ? '글 수정하기' : '글 작성하기'} */}
         </button>
       </div>

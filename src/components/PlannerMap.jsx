@@ -10,7 +10,7 @@ import '../styles/PlannerMap.css';
 import TravelCategoryModal from './TravelCategoryModal';
 import EditPage from './EditPage';
 
-function PlannerMap({ mode = 'write, initialData' }) {
+function PlannerMap({ mode = 'write', initialData }) {
   //0. 모달
   const [showIntroModal, setShowIntroModal] = useState(true);
   const [tripMeta, setTripMeta] = useState(null);
@@ -272,6 +272,7 @@ function PlannerMap({ mode = 'write, initialData' }) {
               planner.handleClearAll(); // 선택된 장소 전부 삭제
               setExpandedRouteId(null); // 펼쳐진 카드도 초기화
             }}
+            tripMeta={tripMeta}
           />
         </div>
       </div>

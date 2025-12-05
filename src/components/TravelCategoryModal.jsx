@@ -1,41 +1,9 @@
 // src/components/TravelCategoryModal.jsx
 import { useState } from 'react';
 import '../styles/TravelCategoryModal.css';
+import apiClient from '../services/apiClient';
 
-const WITH_WHO_OPTIONS = [
-  '혼자',
-  '친구와',
-  '연인과',
-  '배우자와',
-  '아이와',
-  '부모님과',
-  '반려동물과',
-  '기타',
-];
-
-const DURATION_OPTIONS = [
-  '당일',
-  '1박2일',
-  '2박3일',
-  '3박4일',
-  '4박5일',
-  '5박6일',
-  '7일 이상',
-  '기타',
-];
-
-const STYLE_OPTIONS = [
-  '체험/액티비티',
-  'SNS/핫플레이스',
-  '자연',
-  '유명 관광지',
-  '여유롭게',
-  '문화/예술/역사',
-  '여행지 느낌',
-  '쇼핑/음식',
-];
-
-function TravelCategoryModal({ onNext }) {
+function TravelCategoryModal({ onNext, onClose }) {
   const [withWho, setWithWho] = useState([]);
   const [duration, setDuration] = useState('');
   const [styles, setStyles] = useState([]);
