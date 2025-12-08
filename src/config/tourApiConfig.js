@@ -1,5 +1,4 @@
-export const TOURAPI_SERVICE_KEY =
-  '026d32cc4b76b37b8ccf0dfff15faad4ba1835fd5133283380f00126fdd00c84';
+export const TOURAPI_SERVICE_KEY = import.meta.env.VITE_TOURAPI_SERVICE_KEY;
 
 // 카테고리별 contentTypeId 매핑
 export const CONTENT_TYPE_BY_CATEGORY = {

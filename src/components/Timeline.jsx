@@ -181,7 +181,7 @@ function Timeline({
         x: Number(p.lng ?? 0), // double
         y: Number(p.lat ?? 0), // double
 
-        files: fileIds.map((id) => ({ fileId: id })),
+        files: (draft.fileIds || []).map((id) => ({ fileId: id })),
       };
     });
 

@@ -5,9 +5,17 @@ export function useKakaoMap(containerId) {
   const mapRef = useRef(null);
 
   useEffect(() => {
+    const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY;
+
+    if (!KAKAO_JS_KEY) {
+      console.error(
+        '⚠ VITE_KAKAO_JAVASCRIPT_KEY 가 .env에 설정되어 있지 않습니다.'
+      );
+      return;
+    }
+
     const script = document.createElement('script');
-    script.src =
-      '//dapi.kakao.com/v2/maps/sdk.js?appkey=0ab3008da3b4e1d75538347f568693c8&autoload=false&libraries=services';
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false&libraries=services`;
     script.onload = () => {
       if (!window.kakao) {
         console.error('window.kakao 없음');
@@ -22,7 +30,7 @@ export function useKakaoMap(containerId) {
         }
 
         const options = {
-          center: new window.kakao.maps.LatLng(37.5665, 126.978), // 서울 중심
+          center: new window.kakao.maps.LatLng(37.5665, 126.978),
           level: 6,
         };
         const map = new window.kakao.maps.Map(container, options);
